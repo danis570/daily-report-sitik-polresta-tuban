@@ -13,12 +13,14 @@ use Unirow2026\DailyReportSitikPolrestaTuban\Repository\ReportOptionRepository;
 use Unirow2026\DailyReportSitikPolrestaTuban\Repository\ReportRepository;
 use Unirow2026\DailyReportSitikPolrestaTuban\Repository\SessionRepository;
 use Unirow2026\DailyReportSitikPolrestaTuban\Repository\UserRepository;
+use Unirow2026\DailyReportSitikPolrestaTuban\Service\ReportPdfService;
 use Unirow2026\DailyReportSitikPolrestaTuban\Service\ReportService;
 use Unirow2026\DailyReportSitikPolrestaTuban\Service\SessionService;
 
 class ReportController extends BaseController
 {
     private ReportService $reportService;
+    private ReportPdfService $reportPdfService;
     private ReportRepository $reportRepository;
     private ReportOptionRepository $reportOptionRepository;
     private ReportItemRepository $reportItemRepository;
@@ -41,6 +43,7 @@ class ReportController extends BaseController
         $this->reportRepository = new ReportRepository($connection);
         $this->reportOptionRepository = new ReportOptionRepository($connection);
         $this->reportItemRepository = new ReportItemRepository($connection);
+        $this->reportPdfService = new ReportPdfService();
         $this->reportService = new ReportService($this->reportRepository);
     }
 
@@ -300,9 +303,8 @@ class ReportController extends BaseController
         }
     }
 
-    public function print(string $date): void
+    public function pdf(string $date): void
     {
-        // 1. Validasi tanggal
         try {
             $reportDate = new \DateTimeImmutable($date);
         } catch (Exception $e) {
@@ -310,7 +312,6 @@ class ReportController extends BaseController
             exit();
         }
 
-        // 2. Ambil report berdasarkan tanggal
         $report = $this->reportRepository->findByDate($reportDate);
 
         if ($report === null) {
@@ -318,7 +319,10 @@ class ReportController extends BaseController
             exit();
         }
 
-        // 3. Ambil nama pembuat laporan
+        // =========================
+        // CREATOR
+        // =========================
+
         $profile = $this->profileRepository->findByUserId($report->createdBy);
 
         $creatorName = 'Tidak Diketahui';
@@ -333,79 +337,128 @@ class ReportController extends BaseController
             }
         }
 
-        // 4. Format tanggal Indonesia
-        $formattedDate = $this->formatTanggalIndo($report->reportDate);
+        // =========================
+        // TANGGAL
+        // =========================
 
-        // 5. Ambil seluruh item kegiatan
-        $allItems = $this->reportItemRepository
-            ->findByReportId($report->id);
+        $formattedDate = $this->formatTanggalIndo(
+            $report->reportDate
+        );
 
-        // 6. Gabungkan dengan data report_options
+        // =========================
+        // ACTIVITIES
+        // =========================
+
+        $allItems = $this->reportItemRepository->findByReportId(
+            $report->id
+        );
+
         $activitiesWithNames = [];
 
         foreach ($allItems as $item) {
 
-            $target = $this->reportOptionRepository
-                ->findById($item->targetOptionId);
+            $target = $this->reportOptionRepository->findById(
+                $item->targetOptionId
+            );
 
-            $activity = $this->reportOptionRepository
-                ->findById($item->activityOptionId);
+            $activity = $this->reportOptionRepository->findById(
+                $item->activityOptionId
+            );
 
-            $personnel = $this->reportOptionRepository
-                ->findById($item->personnelStrengthOptionId);
+            $personnel = $this->reportOptionRepository->findById(
+                $item->personnelStrengthOptionId
+            );
 
-            $location = $this->reportOptionRepository
-                ->findById($item->locationOptionId);
+            $location = $this->reportOptionRepository->findById(
+                $item->locationOptionId
+            );
 
-            $pic = $this->reportOptionRepository
-                ->findById($item->personInChargeOptionId);
+            $pic = $this->reportOptionRepository->findById(
+                $item->personInChargeOptionId
+            );
 
-            $result = $this->reportOptionRepository
-                ->findById($item->expectedResultOptionId);
+            $result = $this->reportOptionRepository->findById(
+                $item->expectedResultOptionId
+            );
 
             $activitiesWithNames[] = [
-
                 'item' => $item,
 
-                'targetName' => $target
+                'targetName' =>
+                    $target
                     ? $target->name
                     : 'Tidak Diketahui',
 
-                'activityName' => $activity
+                'activityName' =>
+                    $activity
                     ? $activity->name
                     : 'Tidak Diketahui',
 
-                'personnelName' => $personnel
+                'personnelName' =>
+                    $personnel
                     ? $personnel->name
                     : 'Tidak Diketahui',
 
-                'locationName' => $location
+                'locationName' =>
+                    $location
                     ? $location->name
                     : 'Tidak Diketahui',
 
-                'picName' => $pic
+                'picName' =>
+                    $pic
                     ? $pic->name
                     : 'Tidak Diketahui',
 
-                'expectedResultName' => $result
+                'expectedResultName' =>
+                    $result
                     ? $result->name
                     : 'Tidak Diketahui',
             ];
         }
 
-        // 7. Render halaman print
-        View::renderPrint('User/Report/print', [
+        // =========================
+        // RENDER HTML
+        // =========================
 
-            'title' => 'Cetak Laporan Harian - ' . $date,
+        ob_start();
 
+        $data = [
+            'title' => 'Laporan Harian - ' . $formattedDate,
             'report' => $report,
-
             'formattedDate' => $formattedDate,
-
             'creatorName' => $creatorName,
+            'activities' => $activitiesWithNames,
+        ];
 
-            'activities' => $activitiesWithNames
-        ]);
+        extract($data);
+
+        require __DIR__ . '/../View/User/Report/pdf.php';
+
+        $html = ob_get_clean();
+
+        // =========================
+        // GENERATE PDF
+        // =========================
+
+        $pdf = $this->reportPdfService->generate($html);
+
+        // =========================
+        // OUTPUT
+        // =========================
+
+        header('Content-Type: application/pdf');
+
+        header(
+            'Content-Disposition: inline; filename="laporan-' .
+            $date .
+            '.pdf"'
+        );
+
+        header('Content-Length: ' . strlen($pdf));
+
+        echo $pdf;
+
+        exit();
     }
 
 }

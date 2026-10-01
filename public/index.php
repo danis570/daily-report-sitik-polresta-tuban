@@ -54,7 +54,7 @@ $router->post('/report/item/delete/{id}', [ReportItemController::class, 'postDel
 $router->get('/reports', [ReportController::class, 'reports'], [MustLoginMiddleware::class, MustUserMiddleware::class]);
 $router->get('/report/add', [ReportController::class, 'add'], [MustLoginMiddleware::class, MustUserMiddleware::class]);
 $router->get('/report/edit/{id}', [ReportController::class, 'edit'], [MustLoginMiddleware::class, MustUserMiddleware::class]);
-$router->get('/report/print/{date}', [ReportController::class, 'print'], [MustLoginMiddleware::class, MustUserMiddleware::class]);
+$router->get('/report/print/pdf/{date}', [ReportController::class, 'pdf'], [MustLoginMiddleware::class, MustUserMiddleware::class]);
 $router->get('/report/{date}', [ReportController::class, 'detail'], [MustLoginMiddleware::class, MustUserMiddleware::class]);
 $router->post('/report/edit/{id}', [ReportController::class, 'postEdit'], [MustLoginMiddleware::class, MustUserMiddleware::class]);
 $router->post('/report/delete/{id}', [ReportController::class, 'postDelete'], [MustLoginMiddleware::class, MustUserMiddleware::class]);

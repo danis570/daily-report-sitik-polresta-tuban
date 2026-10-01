@@ -172,46 +172,94 @@
                                     </div>
 
                                 </div>
-
-                                <!-- SISI KANAN: KELOMPOK TOMBOL AKSI (Otomatis Vertikal di HP, Rapi di Desktop) -->
                                 <div class="flex flex-col items-stretch sm:items-end gap-2 shrink-0 w-full sm:w-auto">
 
-                                    <!-- Baris Atas: Edit & Delete Berdampingan -->
+                                    <!-- Baris Atas: Edit, Cetak & Hapus -->
                                     <div class="flex items-center gap-2 w-full sm:w-auto">
+
                                         <!-- Tombol Edit -->
                                         <a href="/report/edit/<?= $item['report']->id ?>"
-                                            class="flex-1 sm:flex-none text-center px-3 py-1.5 bg-yellow-400 text-black border-2 border-black font-black uppercase text-xs 
-                              shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] transition-all">
+                                            class="flex-1 sm:flex-none text-center px-3 py-1.5
+                                                bg-yellow-400 text-black
+                                                border-2 border-black
+                                                font-black uppercase text-xs
+                                                shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]
+                                                hover:translate-x-[1px]
+                                                hover:translate-y-[1px]
+                                                hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]
+                                                transition-all">
                                             Edit
                                         </a>
 
+                                        <!-- Tombol Cetak PDF -->
+                                        <a href="/report/print/pdf/<?= $item['report']->reportDate->format('Y-m-d') ?>"
+                                            target="_blank"
+                                            class="flex-1 sm:flex-none text-center px-3 py-1.5
+                                                bg-[#00d982] text-black
+                                                border-2 border-black
+                                                font-black uppercase text-xs
+                                                shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]
+                                                hover:translate-x-[1px]
+                                                hover:translate-y-[1px]
+                                                hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]
+                                                transition-all">
+
+                                            <span class="inline-flex items-center gap-1">
+                                                <i data-lucide="printer" class="w-4 h-4"></i>
+                                                Cetak
+                                            </span>
+
+                                        </a>
+
                                         <!-- Tombol Hapus -->
-                                        <form action="/report/delete/<?= $item['report']->id ?>" method="POST"
+                                        <form action="/report/delete/<?= $item['report']->id ?>"
+                                            method="POST"
                                             onsubmit="return confirm('PERINGATAN: Menghapus laporan ini akan menghapus seluruh rincian kegiatan di dalamnya! Hapus?');"
                                             class="flex-1 sm:flex-none inline">
+
                                             <button type="submit"
-                                                class="w-full text-center px-3 py-1.5 bg-red-500 text-white border-2 border-black font-black uppercase text-xs 
-                                       shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] transition-all">
+                                                class="w-full text-center px-3 py-1.5
+                                                    bg-red-500 text-white
+                                                    border-2 border-black
+                                                    font-black uppercase text-xs
+                                                    shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]
+                                                    hover:translate-x-[1px]
+                                                    hover:translate-y-[1px]
+                                                    hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]
+                                                    transition-all">
                                                 Hapus
                                             </button>
+
                                         </form>
+
                                     </div>
 
-                                    <!-- Baris Bawah: Anak Panah Detail (Berada Tepat di Bawah Tombol Aksi) -->
-                                    <a href="/report/<?= $item['report']->reportDate->format('Y-m-d') ?>" class="w-full sm:w-12 h-10 flex items-center justify-center
-                          bg-[#00d982] text-[#121212]
-                          border-2 border-[#121212]
-                          shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]
-                          hover:translate-x-0.5 hover:-translate-y-0.5
-                          transition-transform">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3"
-                                                d="M9 5l7 7-7 7"></path>
+                                    <!-- Baris Bawah: Detail -->
+                                    <a href="/report/<?= $item['report']->reportDate->format('Y-m-d') ?>"
+                                        class="w-full sm:w-12 h-10 flex items-center justify-center
+                                            bg-[#00d982] text-[#121212]
+                                            border-2 border-[#121212]
+                                            shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]
+                                            hover:translate-x-0.5
+                                            hover:-translate-y-0.5
+                                            transition-transform">
+
+                                        <svg class="w-5 h-5"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            viewBox="0 0 24 24">
+
+                                            <path stroke-linecap="round"
+                                                stroke-linejoin="round"
+                                                stroke-width="3"
+                                                d="M9 5l7 7-7 7">
+                                            </path>
+
                                         </svg>
+
                                     </a>
 
                                 </div>
-
                             </div>
 
                             <!-- Divider -->

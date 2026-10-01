@@ -57,27 +57,7 @@
                 </div>
             </div>
 
-            <div class="mt-6 flex flex-col sm:flex-row gap-3">
-
-                <a href="/report/print/<?= $report->reportDate->format('Y-m-d') ?>" target="_blank" class="inline-flex items-center justify-center gap-2
-               px-5 py-3
-               bg-[#00d982]
-               text-black
-               border-4 border-black
-               font-black uppercase text-sm
-               shadow-[5px_5px_0_0_#121212]
-               hover:shadow-none
-               hover:translate-x-[5px]
-               hover:translate-y-[5px]
-               transition-all">
-
-                    <i data-lucide="printer" class="w-5 h-5"></i>
-
-                    Cetak Laporan
-
-                </a>
-
-            </div>
+         
 
             <!-- Activity Section -->
             <div class="bg-[#00d982] border-4 border-black shadow-brutal p-5 sm:p-6 mb-8">
