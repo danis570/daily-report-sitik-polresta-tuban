@@ -1,0 +1,27 @@
+{
+  "name": "unirow2026/daily-report-sitik-polresta-tuban",
+  "description": "Generate Daily Report Police Resor Tuban City SITIK Division",
+  "type": "project",
+  "autoload": {
+    "psr-4": {
+      "Unirow2026\\DailyReportSitikPolrestaTuban\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Unirow2026\\DailyReportSitikPolrestaTuban\\": "tests/"
+    }
+  },
+  "authors": [
+    {
+      "name": "Ahmad Danish",
+      "email": "ahmad56danish@gmail.com"
+    }
+  ],
+  "require": {
+    "php": ">=8.2"
+  },
+  "require-dev": {
+    "phpunit/phpunit": ">=13.3.4"
+  }
+}
