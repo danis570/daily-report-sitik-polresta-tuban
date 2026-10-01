@@ -13,10 +13,12 @@ class UserControllerTest extends TestCase
         $this->userController = new UserController();
     }
 
-    function testLogin()
+    public function testLogin()
     {
-        $this->userController->login();
+        // 1. Beritahu PHPUnit terlebih dahulu ekspektasi outputnya (Gunakan / agar jadi regex yang valid)
+        $this->expectOutputRegex('/Login/');
 
-        self::expectOutputRegex('[Login]');
+        // 2. Baru jalankan method yang menghasilkan output HTML
+        $this->userController->login();
     }
 }

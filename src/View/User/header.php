@@ -140,7 +140,7 @@
 
                 <!-- Desktop Menu -->
                 <div class="hidden md:flex items-center space-x-8">
-                    <a href="/report"
+                    <a href="/reports"
                         class="font-bold text-lg hover:bg-primary hover:text-black px-2 py-1 transition-colors border-2 border-transparent hover:border-black dark:hover:border-white">Report</a>
                     <a href="/profile"
                         class="font-bold text-lg hover:bg-primary hover:text-black px-2 py-1 transition-colors border-2 border-transparent hover:border-black dark:hover:border-white">Profile</a>
@@ -205,7 +205,7 @@
 
             <div class="px-4 pt-4 pb-8 space-y-4 flex flex-col">
 
-                <a href="/report"
+                <a href="/reports"
                     class="block px-4 py-4 text-2xl font-bold border-4 border-black dark:border-white hover:bg-primary hover:text-black text-center uppercase">
                     Report
                 </a>

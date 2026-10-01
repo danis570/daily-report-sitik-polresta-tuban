@@ -23,7 +23,26 @@ class View
         require_once __DIR__ . '/../View/' . $layouts . '/header.php';
         require_once __DIR__ . '/../View/' . $view . '.php';
         require_once __DIR__ . '/../View/' . $layouts . '/footer.php';
-        exit();
+
+        if (!defined('PHPUNIT_COMPOSER_INSTALL') && !defined('__PHPUNIT_PHAR__')) {
+            exit();
+        }
+    }
+
+    public static function renderPrint(string $view, array $model)
+    {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        $data = array_merge(self::$globalData, $model);
+        extract($data);
+
+        require_once __DIR__ . '/../View/' . $view . '.php';
+
+        if (!defined('PHPUNIT_COMPOSER_INSTALL') && !defined('__PHPUNIT_PHAR__')) {
+            exit();
+        }
     }
 
     public static function redirect(string $path)

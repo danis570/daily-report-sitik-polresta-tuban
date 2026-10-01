@@ -4,7 +4,7 @@
     <!-- Decoration -->
 
     <?php if (isset($error)) { ?>
-        <div class="max-w-3xl mx-auto px-4">
+        <div class="max-w-3xl mx-auto mb-4 px-4">
             <div class="bg-red-100 border-4 border-black p-4 font-bold text-red-700 shadow-[4px_4px_0px_#000]">
                 <span>
                     <?= htmlspecialchars($error) ?>

@@ -1,0 +1,411 @@
+<?php
+
+namespace Unirow2026\DailyReportSitikPolrestaTuban\Controller;
+
+use Exception;
+use Unirow2026\DailyReportSitikPolrestaTuban\App\BaseController;
+use Unirow2026\DailyReportSitikPolrestaTuban\App\Database; // Pastikan class Database di-import
+use Unirow2026\DailyReportSitikPolrestaTuban\App\View;
+use Unirow2026\DailyReportSitikPolrestaTuban\Model\Report\UserAddReportRequest;
+use Unirow2026\DailyReportSitikPolrestaTuban\Repository\ProfileRepository;
+use Unirow2026\DailyReportSitikPolrestaTuban\Repository\ReportItemRepository;
+use Unirow2026\DailyReportSitikPolrestaTuban\Repository\ReportOptionRepository;
+use Unirow2026\DailyReportSitikPolrestaTuban\Repository\ReportRepository;
+use Unirow2026\DailyReportSitikPolrestaTuban\Repository\SessionRepository;
+use Unirow2026\DailyReportSitikPolrestaTuban\Repository\UserRepository;
+use Unirow2026\DailyReportSitikPolrestaTuban\Service\ReportService;
+use Unirow2026\DailyReportSitikPolrestaTuban\Service\SessionService;
+
+class ReportController extends BaseController
+{
+    private ReportService $reportService;
+    private ReportRepository $reportRepository;
+    private ReportOptionRepository $reportOptionRepository;
+    private ReportItemRepository $reportItemRepository;
+
+    // Kosongkan parameter constructor agar Router tidak error saat memanggilnya
+    public function __construct()
+    {
+        // 1. Ambil koneksi PDO tunggal aplikasi
+        $connection = Database::getConnection();
+
+        // 2. Instansiasi objek repository secara manual
+        $userRepository = new UserRepository($connection);
+        $profileRepository = new ProfileRepository($connection);
+        $sessionRepository = new SessionRepository($connection);
+
+        // 3. Kirim repository wajib ke parent (BaseController)
+        parent::__construct($userRepository, $profileRepository, $sessionRepository);
+
+        // 4. Instansiasi objek khusus untuk ReportController
+        $this->reportRepository = new ReportRepository($connection);
+        $this->reportOptionRepository = new ReportOptionRepository($connection);
+        $this->reportItemRepository = new ReportItemRepository($connection);
+        $this->reportService = new ReportService($this->reportRepository);
+    }
+
+    public function reports()
+    {
+        $allReports = $this->reportRepository->findAll();
+
+        if (!empty($allReports)) {
+            $reportsWithProfile = [];
+
+            foreach ($allReports as $report) {
+                $profile = $this->profileRepository->findByUserId($report->createdBy);
+                $creatorName = 'Tidak Diketahui';
+
+                if ($profile !== null && !empty($profile->name)) {
+                    $creatorName = $profile->name;
+                } else {
+                    $user = $this->userRepository->findById($report->createdBy);
+                    if ($user !== null) {
+                        $creatorName = $user->email;
+                    }
+                }
+
+                // Panggil fungsi helper manual yang aman dari crash
+                $formattedDate = $this->formatTanggalIndo($report->reportDate);
+
+                $reportsWithProfile[] = [
+                    'report' => $report,
+                    'formattedDate' => $formattedDate,
+                    'creatorName' => $creatorName
+                ];
+            }
+
+            View::render('User', 'User/Report/reports', [
+                'title' => 'Kelola Laporan Harian',
+                'reports' => $reportsWithProfile
+            ]);
+            return;
+        }
+
+        View::render('User', 'User/Report/reports', [
+            'title' => 'Kelola Laporan Harian',
+            'error' => 'Belum ada report',
+            'reports' => []
+        ]);
+    }
+
+    private function formatTanggalIndo(\DateTimeImmutable $date): string
+    {
+        $hariArr = [
+            'Sunday' => 'Minggu',
+            'Monday' => 'Senin',
+            'Tuesday' => 'Selasa',
+            'Wednesday' => 'Rabu',
+            'Thursday' => 'Kamis',
+            'Friday' => 'Jumat',
+            'Saturday' => 'Sabtu'
+        ];
+
+        $bulanArr = [
+            '01' => 'Januari',
+            '02' => 'Februari',
+            '03' => 'Maret',
+            '04' => 'April',
+            '05' => 'Mei',
+            '06' => 'Juni',
+            '07' => 'Juli',
+            '08' => 'Agustus',
+            '09' => 'September',
+            '10' => 'Oktober',
+            '11' => 'November',
+            '12' => 'Desember'
+        ];
+
+        $englishDay = $date->format('l');
+        $dayNum = $date->format('d');
+        $monthNum = $date->format('m');
+        $yearNum = $date->format('Y');
+
+        $hariIndo = $hariArr[$englishDay] ?? $englishDay;
+        $bulanIndo = $bulanArr[$monthNum] ?? $monthNum;
+
+        return "{$hariIndo}, {$dayNum} {$bulanIndo} {$yearNum}";
+    }
+
+    public function add()
+    {
+        View::render('User', 'User/Report/add', [
+            'title' => 'Tambah Laporan Harian'
+        ]);
+    }
+
+    public function postAdd()
+    {
+        $sessionId = $_COOKIE[SessionService::$cookieName] ?? null;
+        $userId = null;
+
+        if ($sessionId) {
+            $currentSession = $this->sessionRepository->findById($sessionId);
+            if ($currentSession) {
+                $userId = $currentSession->userId;
+            }
+        }
+
+        $request = new UserAddReportRequest();
+        $request->reportDate = $_POST['report_date'] ?? null;
+        $request->createdBy = $userId ? (int) $userId : null;
+
+        try {
+            $this->reportService->create($request);
+            header("Location: /reports");
+            exit();
+        } catch (Exception $exception) {
+            View::render('User', 'User/Report/add', [
+                'title' => 'Tambah Laporan Harian',
+                'error' => $exception->getMessage()
+            ]);
+        }
+    }
+
+    public function detail(string $date)
+    {
+        try {
+            $reportDate = new \DateTimeImmutable($date);
+        } catch (Exception $e) {
+            header("Location: /reports");
+            exit();
+        }
+
+        $report = $this->reportRepository->findByDate($reportDate);
+
+        if ($report === null) {
+            View::render('User', 'User/Report/detail', [
+                'title' => 'Detail Laporan Harian',
+                'error' => 'Laporan untuk tanggal tersebut belum dibuat.',
+                'report' => null
+            ]);
+            return;
+        }
+
+        $profile = $this->profileRepository->findByUserId($report->createdBy);
+        $creatorName = $profile && !empty($profile->name) ? $profile->name : 'Tidak Diketahui';
+
+        $formattedDate = $this->formatTanggalIndo($report->reportDate);
+
+        // 1. Ambil data asli domain ReportItem dari repository
+        $allItems = $this->reportItemRepository->findByReportId($report->id);
+        $activitiesWithNames = [];
+
+        // 2. Gabungkan data opsi menggunakan cara array asosiatif pilihan Anda
+        foreach ($allItems as $item) {
+            $target = $this->reportOptionRepository->findById($item->targetOptionId);
+            $activity = $this->reportOptionRepository->findById($item->activityOptionId);
+            $personnel = $this->reportOptionRepository->findById($item->personnelStrengthOptionId);
+            $location = $this->reportOptionRepository->findById($item->locationOptionId);
+            $pic = $this->reportOptionRepository->findById($item->personInChargeOptionId);
+            $result = $this->reportOptionRepository->findById($item->expectedResultOptionId);
+
+            $activitiesWithNames[] = [
+                'item' => $item, // Menyimpan objek asli Domain ReportItem
+                'targetName' => $target ? $target->name : 'Tidak Diketahui',
+                'activityName' => $activity ? $activity->name : 'Tidak Diketahui',
+                'personnelName' => $personnel ? $personnel->name : 'Tidak Diketahui',
+                'locationName' => $location ? $location->name : 'Tidak Diketahui',
+                'picName' => $pic ? $pic->name : 'Tidak Diketahui',
+                'expectedResultName' => $result ? $result->name : 'Tidak Diketahui',
+            ];
+        }
+
+        View::render('User', 'User/Report/detail', [
+            'title' => 'Detail Laporan Harian - ' . $date,
+            'report' => $report,
+            'formattedDate' => $formattedDate,
+            'creatorName' => $creatorName,
+            'activities' => $activitiesWithNames
+        ]);
+    }
+
+    public function edit(int $id)
+    {
+        // 1. Cari data induk laporan asli berdasarkan ID dari database
+        $report = $this->reportRepository->findById($id);
+
+        // 2. Proteksi: Jika laporan tidak ditemukan, kembalikan ke halaman utama
+        if ($report === null) {
+            header("Location: /reports");
+            exit();
+        }
+
+        // 3. Render halaman formulir edit induk laporan
+        View::render('User', 'User/Report/edit', [
+            'title' => 'Ubah Induk Laporan Harian',
+            'report' => $report
+        ]);
+    }
+
+    public function postEdit(int $id)
+    {
+        // Pastikan laporan induknya eksis sebelum diubah
+        $report = $this->reportRepository->findById($id);
+        if ($report === null) {
+            header("Location: /reports");
+            exit();
+        }
+
+        // Ambil ID User dari session login untuk pencatatan jejak pembaru data
+        $sessionId = $_COOKIE[SessionService::$cookieName] ?? null;
+        $userId = null;
+        if ($sessionId) {
+            $currentSession = $this->sessionRepository->findById($sessionId);
+            if ($currentSession) {
+                $userId = $currentSession->userId;
+            }
+        }
+
+        // 1. Siapkan DTO Request Update
+        $request = new \Unirow2026\DailyReportSitikPolrestaTuban\Model\Report\UserUpdateReportRequest();
+        $request->id = $id;
+        $request->reportDate = $_POST['report_date'] ?? null;
+        $request->createdBy = $userId ? (int) $userId : null;
+
+        try {
+            // 2. Jalankan logika pembaruan di Layer Service
+            $this->reportService->update($request);
+
+            // 3. Sukses: Set flash message dan alihkan kembali ke halaman rekap utama
+            View::flashMessage("Tanggal induk laporan berhasil diperbarui!");
+            header("Location: /reports");
+            exit();
+
+        } catch (Exception $exception) {
+            // 4. Gagal: Tampilkan kembali formulir edit bawa pesan error
+            View::render('User', 'User/Report/edit', [
+                'title' => 'Ubah Induk Laporan Harian',
+                'error' => $exception->getMessage(),
+                'report' => $report
+            ]);
+        }
+    }
+
+    public function postDelete(int $id)
+    {
+        try {
+            // 1. Jalankan proses penghapusan data induk laporan di Layer Service
+            $this->reportService->delete($id);
+
+            // 2. Sukses: Set notifikasi sukses hapus
+            View::flashMessage("Laporan harian berhasil dihapus beserta seluruh giat di dalamnya!");
+            header("Location: /reports");
+            exit();
+
+        } catch (Exception $exception) {
+            // 3. Gagal: Set notifikasi gagal lalu kembalikan ke dashboard rekap utama
+            View::flashMessage("Gagal menghapus laporan: " . $exception->getMessage());
+            header("Location: /reports");
+            exit();
+        }
+    }
+
+    public function print(string $date): void
+    {
+        // 1. Validasi tanggal
+        try {
+            $reportDate = new \DateTimeImmutable($date);
+        } catch (Exception $e) {
+            header("Location: /reports");
+            exit();
+        }
+
+        // 2. Ambil report berdasarkan tanggal
+        $report = $this->reportRepository->findByDate($reportDate);
+
+        if ($report === null) {
+            header("Location: /reports");
+            exit();
+        }
+
+        // 3. Ambil nama pembuat laporan
+        $profile = $this->profileRepository->findByUserId($report->createdBy);
+
+        $creatorName = 'Tidak Diketahui';
+
+        if ($profile !== null && !empty($profile->name)) {
+            $creatorName = $profile->name;
+        } else {
+            $user = $this->userRepository->findById($report->createdBy);
+
+            if ($user !== null) {
+                $creatorName = $user->email;
+            }
+        }
+
+        // 4. Format tanggal Indonesia
+        $formattedDate = $this->formatTanggalIndo($report->reportDate);
+
+        // 5. Ambil seluruh item kegiatan
+        $allItems = $this->reportItemRepository
+            ->findByReportId($report->id);
+
+        // 6. Gabungkan dengan data report_options
+        $activitiesWithNames = [];
+
+        foreach ($allItems as $item) {
+
+            $target = $this->reportOptionRepository
+                ->findById($item->targetOptionId);
+
+            $activity = $this->reportOptionRepository
+                ->findById($item->activityOptionId);
+
+            $personnel = $this->reportOptionRepository
+                ->findById($item->personnelStrengthOptionId);
+
+            $location = $this->reportOptionRepository
+                ->findById($item->locationOptionId);
+
+            $pic = $this->reportOptionRepository
+                ->findById($item->personInChargeOptionId);
+
+            $result = $this->reportOptionRepository
+                ->findById($item->expectedResultOptionId);
+
+            $activitiesWithNames[] = [
+
+                'item' => $item,
+
+                'targetName' => $target
+                    ? $target->name
+                    : 'Tidak Diketahui',
+
+                'activityName' => $activity
+                    ? $activity->name
+                    : 'Tidak Diketahui',
+
+                'personnelName' => $personnel
+                    ? $personnel->name
+                    : 'Tidak Diketahui',
+
+                'locationName' => $location
+                    ? $location->name
+                    : 'Tidak Diketahui',
+
+                'picName' => $pic
+                    ? $pic->name
+                    : 'Tidak Diketahui',
+
+                'expectedResultName' => $result
+                    ? $result->name
+                    : 'Tidak Diketahui',
+            ];
+        }
+
+        // 7. Render halaman print
+        View::renderPrint('User/Report/print', [
+
+            'title' => 'Cetak Laporan Harian - ' . $date,
+
+            'report' => $report,
+
+            'formattedDate' => $formattedDate,
+
+            'creatorName' => $creatorName,
+
+            'activities' => $activitiesWithNames
+        ]);
+    }
+
+}

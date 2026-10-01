@@ -188,11 +188,6 @@
 
             <div class="px-4 pt-4 pb-8 space-y-4 flex flex-col">
 
-                <a href="/report"
-                    class="block px-4 py-4 text-2xl font-bold border-4 border-black dark:border-white hover:bg-primary hover:text-black text-center uppercase">
-                    Report
-                </a>
-
                 <a href="/users"
                     class="block px-4 py-4 text-2xl font-bold border-4 border-black dark:border-white hover:bg-primary hover:text-black text-center uppercase">
                     User
