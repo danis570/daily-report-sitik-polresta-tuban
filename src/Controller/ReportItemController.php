@@ -61,6 +61,7 @@ class ReportItemController extends BaseController
         // 3. Render ke halaman pengisian item laporan
         View::render('User', 'User/Report/report-item-add', [
             'title' => 'Input Kegiatan Laporan — ' . $date,
+            'current' => 'report',
             'report' => $report,
             'date' => $date,
             'formattedDate' => $formattedDate,
@@ -107,6 +108,7 @@ class ReportItemController extends BaseController
 
             View::render('User', 'User/Report/report-item-add', [
                 'title' => 'Input Kegiatan Laporan — ' . $date,
+                'current' => 'report',
                 'error' => $exception->getMessage(),
                 'report' => $report,
                 'date' => $date,
@@ -139,6 +141,7 @@ class ReportItemController extends BaseController
         // 4. Render ke halaman formulir edit item kegiatan
         View::render('User', 'User/Report/report-item-edit', [
             'title' => 'Ubah Kegiatan Laporan — ' . $date,
+            'current' => 'report',
             'reportItem' => $reportItem,
             'report' => $report,
             'date' => $date,
@@ -188,6 +191,7 @@ class ReportItemController extends BaseController
 
             View::render('User', 'User/Report/report-item-edit', [
                 'title' => 'Ubah Kegiatan Laporan — ' . $date,
+                'current' => 'report',
                 'error' => $exception->getMessage(),
                 'reportItem' => $reportItem,
                 'report' => $report,

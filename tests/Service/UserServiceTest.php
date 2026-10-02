@@ -14,6 +14,7 @@ class UserServiceTest extends TestCase
 {
     private UserService $userService;
     private UserRepository $userRepository;
+
     function setUp(): void
     {
         $this->userRepository = new UserRepository(Database::getConnection());
@@ -25,7 +26,7 @@ class UserServiceTest extends TestCase
     {
         $request = new UserRegisterRequest();
         $request->email = 'ahmad@gmail.com';
-        $request->password = 'ok';
+        $request->password = 'password123';               // ✅ diperbaiki
 
         $result = $this->userService->register($request);
 
@@ -37,12 +38,12 @@ class UserServiceTest extends TestCase
     {
         $request = new UserRegisterRequest();
         $request->email = '';
-        $request->password = 'ok';
+        $request->password = 'password123';               // ✅ diperbaiki
 
         self::expectException(Exception::class);
-        self::expectExceptionMessageIs('email is required');
+        self::expectExceptionMessage('email is required');
 
-        $result = $this->userService->register($request);
+        $this->userService->register($request);
     }
 
     function testRegisterEmailPassword()
@@ -52,57 +53,57 @@ class UserServiceTest extends TestCase
         $request->password = '';
 
         self::expectException(Exception::class);
-        self::expectExceptionMessageIs('password is required');
+        self::expectExceptionMessage('password is required');
 
-        $result = $this->userService->register($request);
+        $this->userService->register($request);
     }
 
     function testLoginSuccess()
     {
         $request = new UserRegisterRequest();
         $request->email = 'ahmad@gmail.com';
-        $request->password = 'ok';
+        $request->password = 'password123';               // ✅ diperbaiki
         $this->userService->register($request);
 
         $requestLogin = new UserLoginRequest();
         $requestLogin->email = 'ahmad@gmail.com';
-        $requestLogin->password = 'ok';
+        $requestLogin->password = 'password123';          // ✅ diperbaiki
         $result = $this->userService->login($requestLogin);
 
         self::assertInstanceOf(UserLoginResponse::class, $result);
     }
 
-     function testLoginFailedPassword()
+    function testLoginFailedPassword()
     {
         $request = new UserRegisterRequest();
         $request->email = 'ahmad@gmail.com';
-        $request->password = 'ok';
+        $request->password = 'password123';               // ✅ diperbaiki
         $this->userService->register($request);
 
         self::expectException(Exception::class);
-        self::expectExceptionMessageIs('Email or password is wrong');
+        self::expectExceptionMessage('Email or password is wrong');
 
         $requestLogin = new UserLoginRequest();
         $requestLogin->email = 'ahmad@gmail.com';
-        $requestLogin->password = 'okoo';
+        $requestLogin->password = 'password456';          // ✅ beda dari yang benar
         $result = $this->userService->login($requestLogin);
 
         self::assertInstanceOf(UserLoginResponse::class, $result);
     }
 
-     function testLoginFailedEmail()
+    function testLoginFailedEmail()
     {
         $request = new UserRegisterRequest();
         $request->email = 'ah@gmail.com';
-        $request->password = 'ok';
+        $request->password = 'password123';               // ✅ diperbaiki
         $this->userService->register($request);
 
         self::expectException(Exception::class);
-        self::expectExceptionMessageIs('Email or password is wrong');
+        self::expectExceptionMessage('Email or password is wrong');
 
         $requestLogin = new UserLoginRequest();
         $requestLogin->email = 'ahmad@gmail.com';
-        $requestLogin->password = 'okoo';
+        $requestLogin->password = 'password123';          // ✅ tetap
         $result = $this->userService->login($requestLogin);
 
         self::assertInstanceOf(UserLoginResponse::class, $result);

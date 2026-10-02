@@ -38,7 +38,10 @@ class UserController extends BaseController
 
     public function register(): void
     {
-        View::render('Admin', 'Admin/register', ['title' => 'Register']);
+        View::render('Admin', 'Admin/register', [
+            'title' => 'Register',
+            'current' => 'user'
+        ]);
     }
 
     public function postRegister(): void
@@ -51,13 +54,14 @@ class UserController extends BaseController
             try {
                 $this->userService->register($request);
                 View::flashMessage('Sukses menambah pengguna baru');
-                View::redirect('/register');
+                View::redirect('/users');
             } catch (Exception $e) {
                 View::render(
                     'Admin',
                     'Admin/register',
                     [
                         'title' => 'Register',
+                        'current' => 'user',
                         'error' => $e->getMessage()
                     ]
                 );
@@ -88,7 +92,6 @@ class UserController extends BaseController
             }
         }
     }
-
     public function users()
     {
         $allUserCount = $this->userRepository->countAllUser();
@@ -96,6 +99,7 @@ class UserController extends BaseController
 
         View::render('Admin', 'Admin/users', [
             'title' => 'Data Users',
+            'current' => 'user',
             'user_sum' => $allUserCount,
             'users' => $allUsersData
         ]);

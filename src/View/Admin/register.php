@@ -21,8 +21,9 @@
                 </div>
 
                 <div class="flex items-center gap-3">
-                    <div class="border-4 border-black bg-white px-4 py-3 shadow-brutal flex items-center gap-3">
-                        <i data-lucide="shield-check" class="w-6 h-6"></i>
+                    <div
+                        class="border-4 border-black dark:border-primary bg-white dark:bg-[#121212] px-4 py-3 shadow-brutal dark:shadow-brutal-white flex items-center gap-3 text-black dark:text-white">
+                        <i data-lucide="shield-check" class="w-6 h-6 text-black dark:text-primary"></i>
                         <span class="font-bold uppercase">
                             Admin
                         </span>
@@ -33,6 +34,28 @@
 
         </div>
     </section>
+
+    <?php if (isset($error)) { ?>
+        <div class="max-w-3xl mx-auto px-4 pt-12 relative z-20">
+            <div
+                class="bg-red-500 dark:bg-red-600 text-white border-4 border-black dark:border-white p-4 font-bold shadow-[6px_6px_0px_#000] dark:shadow-[6px_6px_0px_#fff] flex items-center gap-4">
+                <div
+                    class="w-10 h-10 flex-shrink-0 border-4 border-black dark:border-white bg-black text-red-500 flex items-center justify-center">
+                    <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+                </div>
+                <div class="flex-1">
+                    <p class="uppercase text-sm font-display">Error</p>
+                    <p><?= htmlspecialchars($error) ?></p>
+                </div>
+                <button type="button" onclick="this.closest('div.max-w-3xl').remove()"
+                    class="w-10 h-10 flex-shrink-0 border-4 border-black dark:border-white bg-white text-black flex items-center justify-center hover:bg-black hover:text-red-500 transition-colors"
+                    aria-label="Tutup pesan">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+        </div>
+    <?php } ?>
+
 
 
     <!-- Register Section -->
@@ -206,7 +229,7 @@
                         </label>
 
                         <input id="email" type="email" name="email"
-                            value="<?= isset($_POST['email']) ? htmlspecialchars($_POST['email']) : '' ?>" required
+                            value="<?= isset($_POST['email']) ? htmlspecialchars($_POST['email']) : '' ?>"
                             autocomplete="email" class="
                                 w-full
                                 bg-gray-50 dark:bg-black
@@ -222,33 +245,65 @@
 
                     </div>
 
-
+                    <!-- Password -->
                     <!-- Password -->
                     <div>
 
                         <label for="password" class="
-                                block
-                                font-bold
-                                text-lg
-                                mb-2
-                                uppercase
-                                text-black dark:text-white
-                            ">
+            block
+            font-bold
+            text-lg
+            mb-2
+            uppercase
+            text-black dark:text-white
+        ">
                             Password
                         </label>
 
-                        <input id="password" type="password" name="password" required autocomplete="new-password" class="
-                                w-full
-                                bg-gray-50 dark:bg-black
-                                border-4 border-black dark:border-white
-                                p-4
-                                font-bold text-lg
-                                text-black dark:text-white
-                                placeholder-gray-400 dark:placeholder-gray-600
-                                focus:outline-none
-                                focus:shadow-[6px_6px_0px_#00d982]
-                                transition-shadow
-                            " placeholder="••••••••">
+                        <div class="relative">
+
+                            <input id="password" type="password" name="password" autocomplete="new-password"
+                                value="<?= isset($_POST['password']) ? htmlspecialchars($_POST['password']) : '' ?>"
+                                class="
+                w-full
+                bg-gray-50 dark:bg-black
+                border-4 border-black dark:border-white
+                p-4 pr-16
+                font-bold text-lg
+                text-black dark:text-white
+                placeholder-gray-400 dark:placeholder-gray-600
+                focus:outline-none
+                focus:shadow-[6px_6px_0px_#00d982]
+                transition-shadow
+            " placeholder="••••••••">
+
+                            <button type="button" id="toggle-password" onclick="togglePassword()" class="
+                absolute
+                right-2
+                top-1/2
+                -translate-y-1/2
+                w-12
+                h-12
+                flex
+                items-center
+                justify-center
+                border-4
+                border-black
+                dark:border-white
+                bg-white
+                dark:bg-black
+                text-black
+                dark:text-white
+                hover:bg-primary
+                hover:text-black
+                transition-colors
+            " aria-label="Tampilkan password">
+
+                                <i data-lucide="eye" id="eye-icon" class="w-5 h-5"></i>
+
+                            </button>
+
+                        </div>
 
                     </div>
 
@@ -290,6 +345,32 @@
 
 </main>
 
+<script>
+    function closeFlashMessage() {
+        const flashMessage = document.getElementById('flash-message');
+
+        if (flashMessage) {
+            flashMessage.remove();
+        }
+    }
+
+    function togglePassword() {
+        const input = document.getElementById('password');
+        const icon = document.getElementById('eye-icon');
+
+        const isHidden = input.type === 'password';
+
+        input.type = isHidden ? 'text' : 'password';
+
+        // ganti icon
+        icon.setAttribute('data-lucide', isHidden ? 'eye-off' : 'eye');
+
+        // re-render lucide icon
+        if (window.lucide) {
+            lucide.createIcons();
+        }
+    }
+</script>
 
 <script>
     function closeFlashMessage() {

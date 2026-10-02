@@ -36,8 +36,12 @@ class ProfileRepository
         return $result ? $this->mapRowToProfile($result) : null;
     }
 
-    public function findByUserId(int $userId): ?Profile
+    public function findByUserId(?int $userId): ?Profile
     {
+        if ($userId === null) {
+            return null;
+        }
+        
         $stmt = $this->pdo->prepare("SELECT * FROM profiles WHERE user_id = ?");
         $stmt->execute([$userId]);
         $result = $stmt->fetch(PDO::FETCH_ASSOC);

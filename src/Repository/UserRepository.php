@@ -32,8 +32,12 @@ class UserRepository
         return $user;
     }
 
-    public function findById(int $id): ?User
+    public function findById(?int $id): ?User
     {
+        if ($id === null) {
+            return null;
+        }
+        
         $stmt = $this->pdo->prepare("SELECT * FROM users WHERE id = ?");
         $stmt->execute([$id]);
         $result = $stmt->fetch(PDO::FETCH_ASSOC);

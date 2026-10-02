@@ -140,9 +140,15 @@
 
                 <!-- Desktop Menu -->
                 <div class="hidden md:flex items-center space-x-8">
-                    <a href="/users"
-                        class="font-bold text-lg hover:bg-primary hover:text-black px-2 py-1 transition-colors border-2 border-transparent hover:border-black dark:hover:border-white">Users</a>
-
+                    <a href="/users" class="font-bold text-lg px-2 py-1 transition-colors border-2
+                        <?= $current === 'user'
+                            ? 'bg-primary text-black border-black'
+                            : 'border-transparent'
+                            ?>
+                        hover:bg-primary hover:text-black hover:border-black
+                        dark:hover:border-white">
+                        Users
+                    </a>
                     <!-- User Information -->
                     <div
                         class="flex items-center gap-3 border-4 border-black dark:border-white px-3 py-2 bg-white dark:bg-dark">
@@ -188,9 +194,13 @@
 
             <div class="px-4 pt-4 pb-8 space-y-4 flex flex-col">
 
-                <a href="/users"
-                    class="block px-4 py-4 text-2xl font-bold border-4 border-black dark:border-white hover:bg-primary hover:text-black text-center uppercase">
-                    User
+                <a href="/users" class="block px-4 py-4 text-2xl font-bold border-4
+                <?= ($current ?? '') === 'user'
+                    ? 'bg-primary text-black border-black'
+                    : 'border-black dark:border-white'
+                    ?>
+                hover:bg-primary hover:text-black text-center uppercase">
+                    Users
                 </a>
 
 

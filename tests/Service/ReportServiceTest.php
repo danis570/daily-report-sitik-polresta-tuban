@@ -24,30 +24,25 @@ class ReportServiceTest extends TestCase
         $this->reportRepository = new ReportRepository($connection);
         $this->reportService = new ReportService($this->reportRepository);
 
-        // Inisialisasi UserService & UserRepository untuk menyuntikkan data user dummy
         $this->userRepository = new UserRepository($connection);
         $this->userService = new UserService($this->userRepository);
 
-        // Bersihkan data (Urutan penting: hapus child table dulu baru parent table)
         $this->reportRepository->deleteAll();
         $this->userRepository->deleteAll();
     }
 
     public function testCreateSuccess()
     {
-        // 1. Buat User dummy terlebih dahulu agar ID-nya ada di database
         $userRequest = new UserRegisterRequest();
         $userRequest->email = 'petugas@gmail.com';
-        $userRequest->password = 'rahasia';
+        $userRequest->password = 'rahasia123';            // ✅ diperbaiki
         $userResult = $this->userService->register($userRequest);
 
-        // Ambil ID user yang berhasil digenerate otomatis oleh database
         $userId = $userResult->user->id;
 
-        // 2. Gunakan ID user tersebut untuk membuat report
         $request = new UserAddReportRequest();
         $request->reportDate = '2026-10-01';
-        $request->createdBy = $userId; // ID valid yang terdaftar di tabel users
+        $request->createdBy = $userId;
 
         $response = $this->reportService->create($request);
 
@@ -61,7 +56,7 @@ class ReportServiceTest extends TestCase
     {
         $request = new UserAddReportRequest();
         $request->reportDate = '';
-        $request->createdBy = 1; // Tidak apa-apa diisi asal, karena validasi kosong akan memblokir sebelum masuk ke DB
+        $request->createdBy = 1;
 
         $this->expectException(Exception::class);
         $this->expectExceptionMessage('Tanggal laporan tidak boleh kosong.');
@@ -95,20 +90,17 @@ class ReportServiceTest extends TestCase
 
     public function testCreateDuplicateDate()
     {
-        // 1. Buat User dummy terlebih dahulu
         $userRequest = new UserRegisterRequest();
         $userRequest->email = 'petugas2@gmail.com';
-        $userRequest->password = 'rahasia';
+        $userRequest->password = 'rahasia123';            // ✅ diperbaiki
         $userResult = $this->userService->register($userRequest);
         $userId = $userResult->user->id;
 
-        // 2. Simpan laporan pertama
         $request1 = new UserAddReportRequest();
         $request1->reportDate = '2026-10-01';
         $request1->createdBy = $userId;
         $this->reportService->create($request1);
 
-        // 3. Coba simpan laporan kedua dengan tanggal yang sama
         $request2 = new UserAddReportRequest();
         $request2->reportDate = '2026-10-01';
         $request2->createdBy = $userId;
@@ -119,12 +111,11 @@ class ReportServiceTest extends TestCase
         $this->reportService->create($request2);
     }
 
-     public function testUpdateReportSuccess()
+    public function testUpdateReportSuccess()
     {
-        // 1. Setup data user & report awal
         $userRequest = new UserRegisterRequest();
         $userRequest->email = 'operator@gmail.com';
-        $userRequest->password = 'password';
+        $userRequest->password = 'password123';           // ✅ eksplisit
         $userResult = $this->userService->register($userRequest);
 
         $createRequest = new UserAddReportRequest();
@@ -132,7 +123,6 @@ class ReportServiceTest extends TestCase
         $createRequest->createdBy = $userResult->user->id;
         $createResponse = $this->reportService->create($createRequest);
 
-        // 2. Eksekusi pengubahan tanggal laporan ke 2026-10-11
         $updateRequest = new \Unirow2026\DailyReportSitikPolrestaTuban\Model\Report\UserUpdateReportRequest();
         $updateRequest->id = $createResponse->report->id;
         $updateRequest->reportDate = '2026-10-11';
@@ -140,7 +130,6 @@ class ReportServiceTest extends TestCase
 
         $updateResponse = $this->reportService->update($updateRequest);
 
-        // 3. Asersi perubahan
         self::assertInstanceOf(\Unirow2026\DailyReportSitikPolrestaTuban\Model\Report\UserUpdateReportResponse::class, $updateResponse);
         self::assertEquals('2026-10-11', $updateResponse->report->reportDate->format('Y-m-d'));
     }
@@ -149,7 +138,7 @@ class ReportServiceTest extends TestCase
     {
         $userRequest = new UserRegisterRequest();
         $userRequest->email = 'operator2@gmail.com';
-        $userRequest->password = 'password';
+        $userRequest->password = 'password123';           // ✅ eksplisit
         $userResult = $this->userService->register($userRequest);
 
         $createRequest = new UserAddReportRequest();
@@ -157,10 +146,8 @@ class ReportServiceTest extends TestCase
         $createRequest->createdBy = $userResult->user->id;
         $createResponse = $this->reportService->create($createRequest);
 
-        // Jalankan fungsi hapus laporan utama
         $this->reportService->delete($createResponse->report->id);
 
-        // Pastikan saat dicari kembali hasilnya null
         $check = $this->reportRepository->findById($createResponse->report->id);
         self::assertNull($check);
     }

@@ -48,7 +48,7 @@
                         Fungsi Utama Aplikasi
                     </h3>
                     <p class="text-lg leading-relaxed font-medium">
-                        Sistem Informasi Laporan Harian **SITIK Polresta Tuban** adalah platform digital terintegrasi yang dirancang khusus untuk memodernisasi pencatatan kinerja operasional. Sistem ini mempermudah personel dalam menginput log harian, memantau infrastruktur teknologi secara *real-time*, serta menyajikan data valid guna mendukung pengambilan keputusan pimpinan secara cepat dan akurat.
+                        Sistem Informasi Laporan Harian TIK Polresta Tuban adalah platform digital terintegrasi yang dirancang khusus untuk memodernisasi pencatatan kinerja operasional. Sistem ini mempermudah personel dalam menginput log harian, memantau infrastruktur teknologi secara *real-time*, serta menyajikan data valid guna mendukung pengambilan keputusan pimpinan secara cepat dan akurat.
                     </p>
                 </div>
 

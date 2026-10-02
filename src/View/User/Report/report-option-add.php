@@ -34,8 +34,7 @@
                         bg-red-500 text-white
                         border-2 border-black
                         shadow-brutal
-                        p-4"
-                 role="alert">
+                        p-4" role="alert">
 
                 <div class="flex items-start gap-3">
 
@@ -75,38 +74,65 @@
                 <!-- Kategori -->
                 <div>
 
-                    <label for="category"
-                        class="block mb-2
-                               text-sm font-black
-                               uppercase tracking-wide text-black">
+                    <label for="category" class="block mb-2
+               text-sm font-black
+               uppercase tracking-wide text-black">
                         Kategori
                     </label>
 
-                    <input
-                        type="text"
-                        id="category"
-                        name="category"
-                        placeholder="Contoh: Giat, Lokasi, Satuan"
-                        value="<?= htmlspecialchars($oldInput['category'] ?? '') ?>"
-                        required
-                        class="block w-full
-                               px-4 py-3
-                               bg-gray-50 text-black
-                               border-2 border-black
-                               font-medium
-                               outline-none
-                               placeholder:text-gray-400
-                               focus:bg-white
-                               focus:ring-0
-                               focus:shadow-[4px_4px_0px_0px_#00d982]
-                               transition-all duration-150"
-                    >
+                    <select id="category" name="category" required class="block w-full
+               px-4 py-3
+               bg-gray-50 text-black
+               border-2 border-black
+               font-medium
+               outline-none
+               focus:bg-white
+               focus:ring-0
+               focus:shadow-[4px_4px_0px_0px_#00d982]
+               transition-all duration-150">
+
+                        <option value="">-- Pilih Kategori --</option>
+
+                        <option value="target" <?= ($oldInput['category'] ?? '') === 'target'
+                            ? 'selected'
+                            : '' ?>>
+             Target
+                        </option>
+
+                        <option value="activity" <?= ($oldInput['category'] ?? '') === 'activity'
+                            ? 'selected'
+                            : '' ?>>
+            Activity
+                        </option>
+
+                        <option value="personnel_strength" <?= ($oldInput['category'] ?? '') === 'personnel_strength'
+                            ? 'selected'
+                            : '' ?>>
+            Kekuatan Personel
+                        </option>
+
+                        <option value="location" <?= ($oldInput['category'] ?? '') === 'location'
+                            ? 'selected'
+                            : '' ?>>
+            Lokasi
+                        </option>
+
+                        <option value="person_in_charge" <?= ($oldInput['category'] ?? '') === 'person_in_charge'
+                            ? 'selected'
+                            : '' ?>>
+             Penanggung Jawab
+                        </option>
+
+                        <option value="expected_result" <?= ($oldInput['category'] ?? '') === 'expected_result'
+                            ? 'selected'
+                            : '' ?>>
+            Hasil yang Ingin Dicapai
+                        </option>
+
+                    </select>
 
                     <p class="mt-2 text-xs font-medium text-gray-500">
-                        Contoh kategori:
-                        <span class="font-bold text-black">target</span>,
-                        <span class="font-bold text-black">activity</span>,
-                        <span class="font-bold text-black">location</span>.
+                        Pilih kategori yang tersedia pada sistem.
                     </p>
 
                 </div>
@@ -115,21 +141,14 @@
                 <!-- Nama Opsi -->
                 <div>
 
-                    <label for="name"
-                        class="block mb-2
+                    <label for="name" class="block mb-2
                                text-sm font-black
                                uppercase tracking-wide text-black">
                         Nama Pilihan
                     </label>
 
-                    <input
-                        type="text"
-                        id="name"
-                        name="name"
-                        placeholder="Contoh: Patroli Sinergitas, Penjagaan"
-                        value="<?= htmlspecialchars($oldInput['name'] ?? '') ?>"
-                        required
-                        class="block w-full
+                    <input type="text" id="name" name="name" placeholder="Contoh: Patroli Sinergitas, Penjagaan"
+                        value="<?= htmlspecialchars($oldInput['name'] ?? '') ?>" required class="block w-full
                                px-4 py-3
                                bg-gray-50 text-black
                                border-2 border-black
@@ -139,8 +158,7 @@
                                focus:bg-white
                                focus:ring-0
                                focus:shadow-[4px_4px_0px_0px_#00d982]
-                               transition-all duration-150"
-                    >
+                               transition-all duration-150">
 
                 </div>
 
@@ -148,18 +166,14 @@
                 <!-- Deskripsi -->
                 <div>
 
-                    <label for="description"
-                        class="block mb-2
+                    <label for="description" class="block mb-2
                                text-sm font-black
                                uppercase tracking-wide text-black">
                         Deskripsi
                         <span class="text-gray-400">(Opsional)</span>
                     </label>
 
-                    <textarea
-                        id="description"
-                        name="description"
-                        rows="4"
+                    <textarea id="description" name="description" rows="4"
                         placeholder="Keterangan opsional mengenai pilihan ini..."
                         class="block w-full
                                px-4 py-3
@@ -172,8 +186,7 @@
                                focus:bg-white
                                focus:ring-0
                                focus:shadow-[4px_4px_0px_0px_#00d982]
-                               transition-all duration-150"
-                    ><?= htmlspecialchars($oldInput['description'] ?? '') ?></textarea>
+                               transition-all duration-150"><?= htmlspecialchars($oldInput['description'] ?? '') ?></textarea>
 
                 </div>
 
@@ -187,8 +200,7 @@
                             gap-3">
 
                     <!-- Batal -->
-                    <a href="/report/option"
-                        class="inline-flex items-center justify-center
+                    <a href="/report/option" class="inline-flex items-center justify-center
                                px-5 py-3
                                bg-white text-black
                                border-2 border-black
@@ -203,9 +215,7 @@
 
 
                     <!-- Simpan -->
-                    <button
-                        type="submit"
-                        class="inline-flex items-center justify-center
+                    <button type="submit" class="inline-flex items-center justify-center
                                px-6 py-3
                                bg-[#00d982] text-black
                                border-2 border-black

@@ -19,7 +19,7 @@ class ReportItemServiceTest extends TestCase
     private ReportItemService $reportItemService;
     private ReportItemRepository $reportItemRepository;
     private ReportRepository $reportRepository;
-     private ReportOptionRepository $reportOptionRepository; 
+    private ReportOptionRepository $reportOptionRepository;
     private UserService $userService;
     private UserRepository $userRepository;
     private ReportService $reportService;
@@ -27,32 +27,32 @@ class ReportItemServiceTest extends TestCase
     protected function setUp(): void
     {
         $connection = Database::getConnection();
-        
+
         $this->reportItemRepository = new ReportItemRepository($connection);
         $this->reportRepository = new ReportRepository($connection);
-        $this->reportOptionRepository = new ReportOptionRepository($connection); // 3. INSTANSIASI DI SINI
+        $this->reportOptionRepository = new ReportOptionRepository($connection);
         $this->userRepository = new UserRepository($connection);
         $this->userService = new UserService($this->userRepository);
         $this->reportService = new ReportService($this->reportRepository);
-        
+
         $this->reportItemService = new ReportItemService(
             $this->reportItemRepository,
             $this->reportRepository
         );
 
-        // 4. Bersihkan data (Urutan penting agar aman dari constraint foreign key)
+        // Bersihkan data (urutan penting: anak dulu, lalu parent)
         $this->reportItemRepository->deleteAll();
-        $this->reportOptionRepository->deleteAll(); // Bersihkan juga tabel options
+        $this->reportOptionRepository->deleteAll();
         $this->reportRepository->deleteAll();
         $this->userRepository->deleteAll();
     }
 
-        public function testCreateSuccessAndAutoIncrementItemNo()
+    public function testCreateSuccessAndAutoIncrementItemNo()
     {
-        // 1. Buat data User & Laporan Induk (Report) terlebih dahulu
+        // 1. Buat User (EMAIL HARUS @gmail.com, PASSWORD MIN 8 KARAKTER)
         $userRequest = new UserRegisterRequest();
-        $userRequest->email = 'sitik@polrestatuban.com';
-        $userRequest->password = 'tuban123';
+        $userRequest->email = 'sitik@gmail.com';        // ✅ diganti
+        $userRequest->password = 'tuban123';             // ✅ 8 karakter
         $userResult = $this->userService->register($userRequest);
         $userId = $userResult->user->id;
 
@@ -62,7 +62,7 @@ class ReportItemServiceTest extends TestCase
         $reportResponse = $this->reportService->create($reportRequest);
         $reportId = $reportResponse->report->id;
 
-        // 2. BUAT DATA DUMMY 'REPORT OPTIONS' TERLEBIH DAHULU AGAR ID VALID
+        // 2. Buat data dummy Report Options
         $opt1 = $this->createDummyOption('Target', 'Sasaran 1');
         $opt2 = $this->createDummyOption('Activity', 'Patroli');
         $opt3 = $this->createDummyOption('Personnel', '10 Personel');
@@ -70,7 +70,7 @@ class ReportItemServiceTest extends TestCase
         $opt5 = $this->createDummyOption('PIC', 'Kanit Patroli');
         $opt6 = $this->createDummyOption('Result', 'Aman Terkendali');
 
-        // 3. Simpan Item Kegiatan PERTAMA menggunakan ID yang baru saja dibuat
+        // 3. Simpan Item Kegiatan
         $request1 = new UserAddReportItemRequest();
         $request1->reportId = $reportId;
         $request1->targetOptionId = $opt1->id;
@@ -83,12 +83,10 @@ class ReportItemServiceTest extends TestCase
 
         $response1 = $this->reportItemService->create($request1);
 
-        // Asersi Item Pertama
         self::assertInstanceOf(UserAddReportItemResponse::class, $response1);
         self::assertEquals(1, $response1->reportItem->itemNo);
     }
 
-    // Helper kecil untuk membuat data dummy opsi di test
     private function createDummyOption(string $category, string $name)
     {
         $option = new \Unirow2026\DailyReportSitikPolrestaTuban\Domain\ReportOption();
@@ -97,12 +95,11 @@ class ReportItemServiceTest extends TestCase
         return $this->reportOptionRepository->save($option);
     }
 
-
     public function testCreateReportNotFound()
     {
-        // Mencoba menginput kegiatan ke ID laporan fiktif (9999)
+        // Report ID fiktif, options juga fiktif
         $request = new UserAddReportItemRequest();
-        $request->reportId = 9999; 
+        $request->reportId = 9999;
         $request->targetOptionId = 1;
         $request->activityOptionId = 2;
         $request->personnelStrengthOptionId = 3;
@@ -117,13 +114,12 @@ class ReportItemServiceTest extends TestCase
         $this->reportItemService->create($request);
     }
 
-
-        public function testUpdateSuccess()
+    public function testUpdateSuccess()
     {
-        // 1. Skenario setup data awal tiruan (dummy)
+        // 1. Setup User (EMAIL @gmail.com, PASSWORD >= 8)
         $userRequest = new UserRegisterRequest();
-        $userRequest->email = 'test-update@gmail.com';
-        $userRequest->password = 'password';
+        $userRequest->email = 'test-update@gmail.com';   // ✅ sudah OK
+        $userRequest->password = 'password123';          // ✅ ganti dari 'password' (8 char = OK)
         $userResult = $this->userService->register($userRequest);
 
         $reportRequest = new UserAddReportRequest();
@@ -142,7 +138,7 @@ class ReportItemServiceTest extends TestCase
         $requestCreate = new UserAddReportItemRequest();
         $requestCreate->reportId = $reportResponse->report->id;
         $requestCreate->targetOptionId = $optTarget->id;
-        $requestCreate->activityOptionId = $optActivity1->id; // Giat Awal: Patroli
+        $requestCreate->activityOptionId = $optActivity1->id;
         $requestCreate->personnelStrengthOptionId = $optPers->id;
         $requestCreate->locationOptionId = $optLoc->id;
         $requestCreate->personInChargeOptionId = $optPic->id;
@@ -150,11 +146,11 @@ class ReportItemServiceTest extends TestCase
         $requestCreate->remarks = 'Keterangan awal aktivitas dinas.';
         $responseCreate = $this->reportItemService->create($requestCreate);
 
-        // 2. Eksekusi Perubahan Data (Update)
+        // 2. Update
         $requestUpdate = new \Unirow2026\DailyReportSitikPolrestaTuban\Model\Report\UserUpdateReportItemRequest();
         $requestUpdate->id = $responseCreate->reportItem->id;
         $requestUpdate->targetOptionId = $optTarget->id;
-        $requestUpdate->activityOptionId = $optActivity2->id; // Diubah jadi: Sambang Tokoh
+        $requestUpdate->activityOptionId = $optActivity2->id;
         $requestUpdate->personnelStrengthOptionId = $optPers->id;
         $requestUpdate->locationOptionId = $optLoc->id;
         $requestUpdate->personInChargeOptionId = $optPic->id;
@@ -163,19 +159,17 @@ class ReportItemServiceTest extends TestCase
 
         $responseUpdate = $this->reportItemService->update($requestUpdate);
 
-        // 3. Asersi Perubahan data ViewModel/Domain
         self::assertEquals($optActivity2->id, $responseUpdate->reportItem->activityOptionId);
         self::assertEquals('Keterangan setelah diperbarui.', $responseUpdate->reportItem->remarks);
-        // Memastikan nomor urut (item_no) tidak berubah/tetap aman
         self::assertEquals(1, $responseUpdate->reportItem->itemNo);
     }
 
     public function testDeleteReportItemSuccess()
     {
-        // 1. Jalankan skenario pendaftaran data dasar seperti biasa
+        // 1. Setup User (EMAIL @gmail.com, PASSWORD >= 8)
         $userRequest = new UserRegisterRequest();
-        $userRequest->email = 'test-delete@gmail.com';
-        $userRequest->password = 'password';
+        $userRequest->email = 'test-delete@gmail.com';   // ✅ sudah OK
+        $userRequest->password = 'password123';          // ✅ ganti dari 'password'
         $userResult = $this->userService->register($userRequest);
 
         $reportRequest = new UserAddReportRequest();
@@ -196,12 +190,11 @@ class ReportItemServiceTest extends TestCase
         $request->remarks = 'Akan segera dihapus.';
         $response = $this->reportItemService->create($request);
 
-        // 2. Jalankan eksekusi fungsi hapus di Service
+        // 2. Hapus
         $this->reportItemService->delete($response->reportItem->id);
 
-        // 3. Pastikan data tidak ditemukan kembali (null) saat dicari
+        // 3. Pastikan null
         $check = $this->reportItemRepository->findById($response->reportItem->id);
         self::assertNull($check);
     }
-
 }

@@ -40,13 +40,31 @@ class UserService
         $response->user = $result;
         return $response;
     }
+
     private function registerValidation(UserRegisterRequest $request): void
     {
         if (trim($request->email) == '') {
             throw new Exception('email is required');
         }
+
         if (trim($request->password) == '') {
             throw new Exception('password is required');
+        }
+
+        // Validasi format email harus berakhiran @gmail.com
+        if (!str_ends_with(strtolower(trim($request->email)), '@gmail.com')) {
+            throw new Exception('email tidak valid');
+        }
+
+        // Validasi panjang password minimal 8 karakter
+        if (strlen($request->password) < 8) {
+            throw new Exception('minimal password 8 karakter');
+        }
+
+        // Validasi email sudah terdaftar
+        $existingUser = $this->userRepository->findByEmail($request->email);
+        if ($existingUser !== null) {
+            throw new Exception('email sudah terdaftar');
         }
     }
 

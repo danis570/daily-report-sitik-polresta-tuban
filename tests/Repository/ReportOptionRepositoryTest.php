@@ -10,16 +10,30 @@ class ReportOptionRepositoryTest extends TestCase
 {
     private ReportOptionRepository $reportOptionRepository;
 
-    protected function setUp(): void
-    {
-        Database::clearConnection();
+    private \PDO $pdo;
 
-        $pdo = Database::getConnection('dev');
+protected function setUp(): void
+{
+    Database::clearConnection();
 
-        $this->reportOptionRepository = new ReportOptionRepository($pdo);
+    $this->pdo = Database::getConnection('dev');
 
-        $this->reportOptionRepository->deleteAll();
-    }
+    $this->reportOptionRepository = new ReportOptionRepository($this->pdo);
+
+    // 🔥 Hapus anak dulu baru parent
+    $this->truncateAllRelatedTables();
+}
+
+private function truncateAllRelatedTables(): void
+{
+    $this->pdo->exec('SET FOREIGN_KEY_CHECKS=0');
+
+    $this->pdo->exec('TRUNCATE TABLE report_items');
+    $this->pdo->exec('TRUNCATE TABLE reports');
+    $this->pdo->exec('TRUNCATE TABLE report_options');
+
+    $this->pdo->exec('SET FOREIGN_KEY_CHECKS=1');
+}
 
     public function testSaveSuccess(): void
     {

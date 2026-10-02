@@ -3,6 +3,7 @@
 namespace Unirow2026\DailyReportSitikPolrestaTuban\Repository;
 
 use DateTimeImmutable;
+use InvalidArgumentException;
 use PDO;
 use Unirow2026\DailyReportSitikPolrestaTuban\Domain\ReportItem;
 
@@ -155,6 +156,95 @@ class ReportItemRepository
         $this->pdo->exec("
             DELETE FROM report_items
         ");
+    }
+
+    public function countOptionByDateRange(
+        string $category,
+        int $optionId,
+        DateTimeImmutable $startDate,
+        DateTimeImmutable $endDate
+    ): int {
+
+        $optionColumns = [
+            'target' => 'target_option_id',
+            'activity' => 'activity_option_id',
+            'personnel_strength' => 'personnel_strength_option_id',
+            'location' => 'location_option_id',
+            'person_in_charge' => 'person_in_charge_option_id',
+            'expected_result' => 'expected_result_option_id',
+        ];
+
+        if (!isset($optionColumns[$category])) {
+            throw new InvalidArgumentException(
+                'Kategori option tidak valid.'
+            );
+        }
+
+        $column = $optionColumns[$category];
+
+        $stmt = $this->pdo->prepare("
+        SELECT COUNT(*)
+        FROM report_items ri
+        INNER JOIN reports r
+            ON r.id = ri.report_id
+        WHERE ri.$column = ?
+          AND r.report_date BETWEEN ? AND ?
+    ");
+
+        $stmt->execute([
+            $optionId,
+            $startDate->format('Y-m-d'),
+            $endDate->format('Y-m-d'),
+        ]);
+
+        return (int) $stmt->fetchColumn();
+    }
+
+    public function countAllOptionsUsage(): array
+    {
+        $stmt = $this->pdo->query("
+        SELECT option_id, COUNT(*) AS total
+        FROM (
+            SELECT target_option_id AS option_id
+            FROM report_items
+
+            UNION ALL
+
+            SELECT activity_option_id AS option_id
+            FROM report_items
+
+            UNION ALL
+
+            SELECT personnel_strength_option_id AS option_id
+            FROM report_items
+
+            UNION ALL
+
+            SELECT location_option_id AS option_id
+            FROM report_items
+
+            UNION ALL
+
+            SELECT person_in_charge_option_id AS option_id
+            FROM report_items
+
+            UNION ALL
+
+            SELECT expected_result_option_id AS option_id
+            FROM report_items
+        ) AS usage_data
+        GROUP BY option_id
+    ");
+
+        $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $usage = [];
+
+        foreach ($results as $result) {
+            $usage[(int) $result['option_id']] = (int) $result['total'];
+        }
+
+        return $usage;
     }
 
     private function mapRowToReportItem(array $result): ReportItem

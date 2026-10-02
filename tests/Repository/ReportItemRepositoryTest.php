@@ -69,11 +69,12 @@ class ReportItemRepositoryTest extends TestCase
         );
     }
 
-    private function createReport(): Report
-    {
+    private function createReport(
+        string $date = '2026-05-04'
+    ): Report {
         $report = new Report();
 
-        $report->reportDate = new DateTimeImmutable('2026-05-04');
+        $report->reportDate = new DateTimeImmutable($date);
         $report->createdBy = null;
 
         return $this->reportRepository->save($report);
@@ -395,5 +396,30 @@ class ReportItemRepositoryTest extends TestCase
             $this->reportItemRepository
                 ->countByReportId($report->id)
         );
+    }
+
+    public function testCountOptionByDateRange(): void
+    {
+        $report1 = $this->createReport('2026-10-01');
+        $report2 = $this->createReport('2026-10-05');
+
+        $item1 = $this->createReportItem($report1->id);
+        $item2 = $this->createReportItem($report2->id);
+
+        $this->reportItemRepository->save($item1);
+        $this->reportItemRepository->save($item2);
+
+        $startDate = new DateTimeImmutable('2026-10-01');
+        $endDate = new DateTimeImmutable('2026-10-09');
+
+        $total = $this->reportItemRepository
+            ->countOptionByDateRange(
+                'activity',
+                $this->activityOption->id,
+                $startDate,
+                $endDate
+            );
+
+        self::assertSame(2, $total);
     }
 }

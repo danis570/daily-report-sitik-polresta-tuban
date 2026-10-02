@@ -8,6 +8,7 @@ use Unirow2026\DailyReportSitikPolrestaTuban\App\Database;
 use Unirow2026\DailyReportSitikPolrestaTuban\App\View;
 use Unirow2026\DailyReportSitikPolrestaTuban\Model\Report\UserUpdateReportOptionRequest;
 use Unirow2026\DailyReportSitikPolrestaTuban\Repository\ProfileRepository;
+use Unirow2026\DailyReportSitikPolrestaTuban\Repository\ReportItemRepository;
 use Unirow2026\DailyReportSitikPolrestaTuban\Repository\ReportOptionRepository;
 use Unirow2026\DailyReportSitikPolrestaTuban\Repository\SessionRepository;
 use Unirow2026\DailyReportSitikPolrestaTuban\Repository\UserRepository;
@@ -17,6 +18,7 @@ class ReportOptionController extends BaseController
 {
     private ReportOptionRepository $reportOptionRepository;
     private ReportOptionService $reportOptionService;
+    private ReportItemRepository $reportItemRepository;
 
     public function __construct()
     {
@@ -33,28 +35,33 @@ class ReportOptionController extends BaseController
 
         // 4. Instansiasi objek khusus untuk ReportController
         $this->reportOptionRepository = new ReportOptionRepository($connection);
+        $this->reportItemRepository = new ReportItemRepository($connection);
         $this->reportOptionService = new ReportOptionService($this->reportOptionRepository);
     }
 
     public function reportOptions()
     {
-        // 1. Ambil semua data pilihan laporan dari database
         $allOptions = $this->reportOptionRepository->findAll();
 
-        // 2. Render halaman dan kirimkan datanya ke View
+        $usage = $this->reportItemRepository->countAllOptionsUsage();
+
         if (!empty($allOptions)) {
             View::render('User', 'User/Report/report-options', [
                 'title' => 'Kelola Pilihan Laporan',
-                'options' => $allOptions
+                'current' => 'report',
+                'options' => $allOptions,
+                'usage' => $usage
             ]);
+
             return;
         }
 
-        // Jika data kosong
         View::render('User', 'User/Report/report-options', [
             'title' => 'Kelola Pilihan Laporan',
+            'current' => 'report',
             'error' => 'Belum ada pilihan laporan yang terdaftar',
-            'options' => []
+            'options' => [],
+            'usage' => []
         ]);
     }
 
@@ -62,7 +69,8 @@ class ReportOptionController extends BaseController
     {
         // Menampilkan halaman form input untuk Report Option
         View::render('User', 'User/Report/report-option-add', [
-            'title' => 'Tambah Pilihan Laporan Baru'
+            'title' => 'Tambah Pilihan Laporan Baru',
+            'current' => 'report'
         ]);
     }
 
@@ -86,6 +94,7 @@ class ReportOptionController extends BaseController
             // 4. Jika gagal (kategori/nama kosong atau duplikat), kembalikan form dengan pesan error
             View::render('User', 'User/Report/report-option-add', [
                 'title' => 'Tambah Pilihan Laporan Baru',
+                'current' => 'report',
                 'error' => $exception->getMessage(),
                 // Kirim balik data input lama agar user tidak perlu mengetik ulang jika ada error
                 'oldInput' => $_POST
@@ -100,6 +109,7 @@ class ReportOptionController extends BaseController
         if ($option === null) {
             View::render('User', 'User/Report/report-options', [
                 'title' => 'Kelola Pilihan Laporan',
+                'current' => 'report',
                 'error' => 'Pilihan laporan tidak ditemukan.',
                 'options' => $this->reportOptionRepository->findAll()
             ]);
@@ -109,6 +119,7 @@ class ReportOptionController extends BaseController
         // 3. Render halaman formulir edit dan kirim data option-nya
         View::render('User', 'User/Report/report-option-edit', [
             'title' => 'Ubah Pilihan Laporan',
+            'current' => 'report',
             'option' => $option
         ]);
     }
@@ -134,6 +145,7 @@ class ReportOptionController extends BaseController
 
             View::render('User', 'User/Report/report-option-edit', [
                 'title' => 'Ubah Pilihan Laporan',
+                'current' => 'report',
                 'error' => $exception->getMessage(),
                 'option' => $option
             ]);
@@ -154,6 +166,7 @@ class ReportOptionController extends BaseController
         } catch (Exception $exception) {
             View::render('User', 'User/Report/report-options', [
                 'title' => 'Kelola Pilihan Laporan',
+                'current' => 'report',
                 'error' => $exception->getMessage(),
                 'options' => $this->reportOptionRepository->findAll()
             ]);

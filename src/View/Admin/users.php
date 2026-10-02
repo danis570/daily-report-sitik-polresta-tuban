@@ -21,8 +21,9 @@
                 </div>
 
                 <div class="flex items-center gap-3">
-                    <div class="border-4 border-black bg-white px-4 py-3 shadow-brutal flex items-center gap-3">
-                        <i data-lucide="shield-check" class="w-6 h-6"></i>
+                    <div
+                        class="border-4 border-black dark:border-primary bg-white dark:bg-[#121212] px-4 py-3 shadow-brutal dark:shadow-brutal-white flex items-center gap-3 text-black dark:text-white">
+                        <i data-lucide="shield-check" class="w-6 h-6 text-black dark:text-primary"></i>
                         <span class="font-bold uppercase">
                             Admin
                         </span>

@@ -140,26 +140,36 @@
 
                 <!-- Desktop Menu -->
                 <div class="hidden md:flex items-center space-x-8">
-                    <a href="/reports"
-                        class="font-bold text-lg hover:bg-primary hover:text-black px-2 py-1 transition-colors border-2 border-transparent hover:border-black dark:hover:border-white">Report</a>
-                    <a href="/profile"
-                        class="font-bold text-lg hover:bg-primary hover:text-black px-2 py-1 transition-colors border-2 border-transparent hover:border-black dark:hover:border-white">Profile</a>
+                    <a href="/reports" class="font-bold text-lg px-2 py-1 transition-colors border-2
+                        <?= $current === 'report'
+                            ? 'bg-primary text-black border-black'
+                            : 'border-transparent hover:bg-primary hover:text-black hover:border-black dark:hover:border-white'
+                            ?>">
+                        Report
+                    </a>
 
+                    <a href="/profile" class="font-bold text-lg px-2 py-1 transition-colors border-2
+                        <?= $current === 'profile'
+                            ? 'bg-primary text-black border-black'
+                            : 'border-transparent hover:bg-primary hover:text-black hover:border-black dark:hover:border-white'
+                            ?>">
+                        Profile
+                    </a>
                     <!-- User Information -->
-                    <div
-                        class="flex items-center gap-3 border-4 border-black dark:border-white px-3 py-2 bg-white dark:bg-dark">
+                    <div class="flex items-center gap-3 px-3 py-2 bg-white dark:bg-dark">
                         <!-- Foto Profil Avatar -->
                         <div
-                            class="w-9 h-9 border-2 border-black overflow-hidden flex items-center justify-center bg-gray-100 dark:bg-gray-800">
+                            class="w-9 h-9 overflow-hidden flex items-center justify-center bg-gray-100 dark:bg-gray-800 rounded-full">
                             <?php if (isset($currentProfile) && $currentProfile->avatar): ?>
                                 <img src="/uploads/avatar/<?= htmlspecialchars($currentProfile->avatar) ?>" alt="Avatar"
-                                    class="w-full h-full object-cover">
+                                    class="w-full h-full object-cover rounded-full">
                             <?php else: ?>
                                 <!-- Gambar bawaan jika database avatar masih kosong -->
                                 <img src="/uploads/avatar/default-avatar.png" alt="Default Avatar"
-                                    class="w-full h-full object-cover">
+                                    class="w-full h-full object-cover rounded-full">
                             <?php endif; ?>
                         </div>
+
 
                         <div class="leading-tight">
                             <p class="font-bold text-sm dark:text-white">
@@ -205,32 +215,40 @@
 
             <div class="px-4 pt-4 pb-8 space-y-4 flex flex-col">
 
-                <a href="/reports"
-                    class="block px-4 py-4 text-2xl font-bold border-4 border-black dark:border-white hover:bg-primary hover:text-black text-center uppercase">
+                <a href="/reports" class="block px-4 py-4 text-2xl font-bold border-4
+    <?= ($current ?? '') === 'report'
+        ? 'bg-primary text-black border-black'
+        : 'border-black dark:border-white'
+        ?>
+    hover:bg-primary hover:text-black text-center uppercase">
                     Report
                 </a>
 
-                <a href="/profile"
-                    class="block px-4 py-4 text-2xl font-bold border-4 border-black dark:border-white hover:bg-primary hover:text-black text-center uppercase">
+                <a href="/profile" class="block px-4 py-4 text-2xl font-bold border-4
+    <?= ($current ?? '') === 'profile'
+        ? 'bg-primary text-black border-black'
+        : 'border-black dark:border-white'
+        ?>
+    hover:bg-primary hover:text-black text-center uppercase">
                     Profil
                 </a>
 
                 <!-- User Information (Mobile) -->
-                <div
-                    class="flex items-center gap-4 px-4 py-4 border-4 border-black dark:border-white bg-primary text-black">
+                <div class="flex items-center gap-4 px-4 py-4 text-black">
 
                     <!-- Avatar -->
                     <div
-                        class="w-12 h-12 flex-shrink-0 bg-white border-4 border-black overflow-hidden flex items-center justify-center">
+                        class="w-12 h-12 flex-shrink-0 bg-white overflow-hidden flex items-center justify-center rounded-full">
                         <?php if (isset($currentProfile) && $currentProfile->avatar): ?>
                             <img src="/uploads/avatar/<?= htmlspecialchars($currentProfile->avatar) ?>" alt="Avatar"
-                                class="w-full h-full object-cover">
+                                class="w-full h-full object-cover rounded-full">
                         <?php else: ?>
                             <!-- Gambar bawaan jika database avatar masih kosong -->
                             <img src="/uploads/avatar/default-avatar.png" alt="Default Avatar"
-                                class="w-full h-full object-cover">
+                                class="w-full h-full object-cover rounded-full">
                         <?php endif; ?>
                     </div>
+
 
                     <!-- Name & Email -->
                     <div class="min-w-0 text-left text-black">

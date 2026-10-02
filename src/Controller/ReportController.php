@@ -2,10 +2,13 @@
 
 namespace Unirow2026\DailyReportSitikPolrestaTuban\Controller;
 
+use DateTimeImmutable;
 use Exception;
+use Throwable;
 use Unirow2026\DailyReportSitikPolrestaTuban\App\BaseController;
 use Unirow2026\DailyReportSitikPolrestaTuban\App\Database; // Pastikan class Database di-import
 use Unirow2026\DailyReportSitikPolrestaTuban\App\View;
+use Unirow2026\DailyReportSitikPolrestaTuban\Model\Report\ReportTrackingRequest;
 use Unirow2026\DailyReportSitikPolrestaTuban\Model\Report\UserAddReportRequest;
 use Unirow2026\DailyReportSitikPolrestaTuban\Repository\ProfileRepository;
 use Unirow2026\DailyReportSitikPolrestaTuban\Repository\ReportItemRepository;
@@ -15,6 +18,7 @@ use Unirow2026\DailyReportSitikPolrestaTuban\Repository\SessionRepository;
 use Unirow2026\DailyReportSitikPolrestaTuban\Repository\UserRepository;
 use Unirow2026\DailyReportSitikPolrestaTuban\Service\ReportPdfService;
 use Unirow2026\DailyReportSitikPolrestaTuban\Service\ReportService;
+use Unirow2026\DailyReportSitikPolrestaTuban\Service\ReportTrackingService;
 use Unirow2026\DailyReportSitikPolrestaTuban\Service\SessionService;
 
 class ReportController extends BaseController
@@ -24,6 +28,7 @@ class ReportController extends BaseController
     private ReportRepository $reportRepository;
     private ReportOptionRepository $reportOptionRepository;
     private ReportItemRepository $reportItemRepository;
+    private ReportTrackingService $reportTrackingService;
 
     // Kosongkan parameter constructor agar Router tidak error saat memanggilnya
     public function __construct()
@@ -45,29 +50,70 @@ class ReportController extends BaseController
         $this->reportItemRepository = new ReportItemRepository($connection);
         $this->reportPdfService = new ReportPdfService();
         $this->reportService = new ReportService($this->reportRepository);
+        $this->reportTrackingService = new ReportTrackingService($this->reportItemRepository, $this->reportOptionRepository);
     }
 
     public function reports()
     {
-        $allReports = $this->reportRepository->findAll();
+        $startDate = $_GET['start_date'] ?? null;
+        $endDate = $_GET['end_date'] ?? null;
+
+        if ($startDate !== null && $endDate !== null) {
+
+            try {
+                $startDateObject = new DateTimeImmutable($startDate);
+                $endDateObject = new DateTimeImmutable($endDate);
+            } catch (Exception $e) {
+                View::render('User', 'User/Report/reports', [
+                    'title' => 'Kelola Laporan Harian',
+                    'current' => 'report',
+                    'error' => 'Format tanggal tidak valid.',
+                    'reports' => [],
+                    'startDate' => $startDate,
+                    'endDate' => $endDate
+                ]);
+                return;
+            }
+
+            // Untuk sekarang kita gunakan method baru ini
+            $allReports = $this->reportRepository->findByDateRange(
+                $startDateObject,
+                $endDateObject
+            );
+
+        } else {
+
+            $allReports = $this->reportRepository->findAll();
+        }
+
 
         if (!empty($allReports)) {
+
             $reportsWithProfile = [];
 
             foreach ($allReports as $report) {
-                $profile = $this->profileRepository->findByUserId($report->createdBy);
-                $creatorName = 'Tidak Diketahui';
 
-                if ($profile !== null && !empty($profile->name)) {
-                    $creatorName = $profile->name;
-                } else {
-                    $user = $this->userRepository->findById($report->createdBy);
-                    if ($user !== null) {
-                        $creatorName = $user->email;
+                $creatorName = 'User telah dihapus';
+
+                if ($report->createdBy !== null) {
+
+                    $profile = $this->profileRepository->findByUserId(
+                        (int) $report->createdBy
+                    );
+
+                    if ($profile !== null && !empty($profile->name)) {
+                        $creatorName = $profile->name;
+                    } else {
+                        $user = $this->userRepository->findById(
+                            (int) $report->createdBy
+                        );
+
+                        if ($user !== null) {
+                            $creatorName = $user->email;
+                        }
                     }
                 }
 
-                // Panggil fungsi helper manual yang aman dari crash
                 $formattedDate = $this->formatTanggalIndo($report->reportDate);
 
                 $reportsWithProfile[] = [
@@ -79,19 +125,29 @@ class ReportController extends BaseController
 
             View::render('User', 'User/Report/reports', [
                 'title' => 'Kelola Laporan Harian',
-                'reports' => $reportsWithProfile
+                'current' => 'report',
+                'reports' => $reportsWithProfile,
+                'startDate' => $startDate,
+                'endDate' => $endDate
             ]);
+
             return;
         }
 
+
         View::render('User', 'User/Report/reports', [
             'title' => 'Kelola Laporan Harian',
-            'error' => 'Belum ada report',
-            'reports' => []
+            'current' => 'report',
+            'error' => ($startDate !== null && $endDate !== null)
+                ? 'Tidak ada laporan pada rentang tanggal tersebut.'
+                : 'Belum ada report',
+            'reports' => [],
+            'startDate' => $startDate,
+            'endDate' => $endDate
         ]);
     }
 
-    private function formatTanggalIndo(\DateTimeImmutable $date): string
+    private function formatTanggalIndo(DateTimeImmutable $date): string
     {
         $hariArr = [
             'Sunday' => 'Minggu',
@@ -132,7 +188,8 @@ class ReportController extends BaseController
     public function add()
     {
         View::render('User', 'User/Report/add', [
-            'title' => 'Tambah Laporan Harian'
+            'title' => 'Tambah Laporan Harian',
+            'current' => 'report'
         ]);
     }
 
@@ -159,6 +216,7 @@ class ReportController extends BaseController
         } catch (Exception $exception) {
             View::render('User', 'User/Report/add', [
                 'title' => 'Tambah Laporan Harian',
+                'current' => 'report',
                 'error' => $exception->getMessage()
             ]);
         }
@@ -178,6 +236,7 @@ class ReportController extends BaseController
         if ($report === null) {
             View::render('User', 'User/Report/detail', [
                 'title' => 'Detail Laporan Harian',
+                'current' => 'report',
                 'error' => 'Laporan untuk tanggal tersebut belum dibuat.',
                 'report' => null
             ]);
@@ -215,6 +274,7 @@ class ReportController extends BaseController
 
         View::render('User', 'User/Report/detail', [
             'title' => 'Detail Laporan Harian - ' . $date,
+            'current' => 'report',
             'report' => $report,
             'formattedDate' => $formattedDate,
             'creatorName' => $creatorName,
@@ -236,6 +296,7 @@ class ReportController extends BaseController
         // 3. Render halaman formulir edit induk laporan
         View::render('User', 'User/Report/edit', [
             'title' => 'Ubah Induk Laporan Harian',
+            'current' => 'report',
             'report' => $report
         ]);
     }
@@ -278,6 +339,7 @@ class ReportController extends BaseController
             // 4. Gagal: Tampilkan kembali formulir edit bawa pesan error
             View::render('User', 'User/Report/edit', [
                 'title' => 'Ubah Induk Laporan Harian',
+                'current' => 'report',
                 'error' => $exception->getMessage(),
                 'report' => $report
             ]);
@@ -303,10 +365,104 @@ class ReportController extends BaseController
         }
     }
 
+    public function tracking(): void
+    {
+        $category = $_GET['category'] ?? null;
+
+        $options = [];
+
+        if ($category !== null && $category !== '') {
+            $options = $this->reportOptionRepository
+                ->findByCategory($category);
+        }
+
+        View::render(
+            'user',
+            'User/Report/tracking',
+            [
+                'title' => 'Pelacakan Laporan',
+                'current' => 'report',
+                'categories' => [
+                    'target' => 'Target',
+                    'activity' => 'Activity',
+                    'personnel_strength' => 'Kekuatan Personel',
+                    'location' => 'Lokasi',
+                    'person_in_charge' => 'Penanggung Jawab',
+                    'expected_result' => 'Hasil yang Ingin Dicapai',
+                ],
+
+                'selectedCategory' => $category,
+                'options' => $options,
+                'result' => null,
+                'error' => null,
+            ]
+        );
+    }
+
+    public function postTracking(): void
+    {
+        try {
+            $request = new ReportTrackingRequest();
+
+            $request->category = $_POST['category'] ?? '';
+            $request->optionId = (int) ($_POST['option_id'] ?? 0);
+
+            $request->startDate = new DateTimeImmutable(
+                $_POST['start_date'] ?? ''
+            );
+
+            $request->endDate = new DateTimeImmutable(
+                $_POST['end_date'] ?? ''
+            );
+
+            $result = $this->reportTrackingService->track($request);
+
+            View::render(
+                'user',
+                'User/Report/tracking',
+                [
+                    'title' => 'Pelacakan Laporan',
+                    'current' => 'report',
+                    'categories' => [
+                        'target' => 'Target',
+                        'activity' => 'Activity',
+                        'personnel_strength' => 'Kekuatan Personel',
+                        'location' => 'Lokasi',
+                        'person_in_charge' => 'Penanggung Jawab',
+                        'expected_result' => 'Hasil yang Ingin Dicapai',
+                    ],
+                    'options' => $this->reportOptionRepository
+                        ->findByCategory($request->category),
+                    'result' => $result,
+                ]
+            );
+        } catch (Throwable $e) {
+            View::render(
+                'user',
+                'User/Report/tracking',
+                [
+                    'title' => 'Pelacakan Laporan',
+                    'current' => 'report',
+                    'categories' => [
+                        'target' => 'Target',
+                        'activity' => 'Activity',
+                        'personnel_strength' => 'Kekuatan Personel',
+                        'location' => 'Lokasi',
+                        'person_in_charge' => 'Penanggung Jawab',
+                        'expected_result' => 'Hasil yang Ingin Dicapai',
+                    ],
+                    'options' => [],
+                    'result' => null,
+                    'error' => $e->getMessage(),
+                ]
+            );
+        }
+    }
+
     public function pdf(string $date): void
     {
         try {
-            $reportDate = new \DateTimeImmutable($date);
+            $reportDate = new DateTimeImmutable($date);
         } catch (Exception $e) {
             header("Location: /reports");
             exit();
@@ -443,22 +599,468 @@ class ReportController extends BaseController
         $pdf = $this->reportPdfService->generate($html);
 
         // =========================
+        // FORMAT NAMA FILE
+        // =========================
+
+        $dateIndo = $this->formatTanggalIndo(
+            $report->reportDate
+        );
+
+        $filename = strtolower(
+            str_replace(
+                [', ', ' '],
+                ['-', '-'],
+                $dateIndo
+            )
+        );
+
+        $filename = 'laporan-' . $filename . '.pdf';
+
+
+        // =========================
         // OUTPUT
         // =========================
 
         header('Content-Type: application/pdf');
 
         header(
-            'Content-Disposition: inline; filename="laporan-' .
-            $date .
-            '.pdf"'
+            'Content-Disposition: inline; filename="' .
+            $filename .
+            '"'
         );
 
-        header('Content-Length: ' . strlen($pdf));
+        header(
+            'Content-Length: ' .
+            strlen($pdf)
+        );
 
         echo $pdf;
 
         exit();
+    }
+
+    public function pdfRange(
+        string|DateTimeImmutable $startDate,
+        string|DateTimeImmutable $endDate
+    ): void {
+
+        try {
+
+            // =====================================
+            // 1. Pastikan menjadi DateTimeImmutable
+            // =====================================
+
+            if (!$startDate instanceof \DateTimeImmutable) {
+                $start = new \DateTimeImmutable($startDate);
+            } else {
+                $start = $startDate;
+            }
+
+
+            if (!$endDate instanceof \DateTimeImmutable) {
+                $end = new \DateTimeImmutable($endDate);
+            } else {
+                $end = $endDate;
+            }
+
+
+            // =====================================
+            // 2. Validasi tanggal
+            // =====================================
+
+            if ($start > $end) {
+
+                header('Location: /reports');
+
+                exit();
+            }
+
+
+            // =====================================
+            // 3. Ambil report
+            // =====================================
+
+            $reports = $this->reportRepository->findByDateRange(
+                $start,
+                $end
+            );
+
+
+            if (empty($reports)) {
+
+                header('Location: /reports');
+
+                exit();
+            }
+
+
+            // =====================================
+            // 4. Siapkan data report
+            // =====================================
+
+            $reportsData = [];
+
+
+            foreach ($reports as $report) {
+
+                // =================================
+                // Creator
+                // =================================
+
+                // =================================
+                // Creator
+                // =================================
+
+                $creatorName = 'User Telah Dihapus';
+
+                if ($report->createdBy !== null) {
+
+                    $profile = $this->profileRepository->findByUserId(
+                        (int) $report->createdBy
+                    );
+
+                    if ($profile !== null && !empty($profile->name)) {
+
+                        $creatorName = $profile->name;
+
+                    } else {
+
+                        $user = $this->userRepository->findById(
+                            (int) $report->createdBy
+                        );
+
+                        if ($user !== null) {
+                            $creatorName = $user->email;
+                        }
+                    }
+                }
+
+
+                // =================================
+                // Format tanggal
+                // =================================
+
+                $formattedDate = $this->formatTanggalIndo(
+                    $report->reportDate
+                );
+
+
+                // =================================
+                // Activities
+                // =================================
+
+                $allItems = $this->reportItemRepository->findByReportId(
+                    $report->id
+                );
+
+
+                $activitiesWithNames = [];
+
+
+                foreach ($allItems as $item) {
+
+                    $target =
+                        $this->reportOptionRepository->findById(
+                            $item->targetOptionId
+                        );
+
+
+                    $activity =
+                        $this->reportOptionRepository->findById(
+                            $item->activityOptionId
+                        );
+
+
+                    $personnel =
+                        $this->reportOptionRepository->findById(
+                            $item->personnelStrengthOptionId
+                        );
+
+
+                    $location =
+                        $this->reportOptionRepository->findById(
+                            $item->locationOptionId
+                        );
+
+
+                    $pic =
+                        $this->reportOptionRepository->findById(
+                            $item->personInChargeOptionId
+                        );
+
+
+                    $result =
+                        $this->reportOptionRepository->findById(
+                            $item->expectedResultOptionId
+                        );
+
+
+                    $activitiesWithNames[] = [
+
+                        'item' => $item,
+
+                        'targetName' =>
+                            $target
+                            ? $target->name
+                            : 'Tidak Diketahui',
+
+                        'activityName' =>
+                            $activity
+                            ? $activity->name
+                            : 'Tidak Diketahui',
+
+                        'personnelName' =>
+                            $personnel
+                            ? $personnel->name
+                            : 'Tidak Diketahui',
+
+                        'locationName' =>
+                            $location
+                            ? $location->name
+                            : 'Tidak Diketahui',
+
+                        'picName' =>
+                            $pic
+                            ? $pic->name
+                            : 'Tidak Diketahui',
+
+                        'expectedResultName' =>
+                            $result
+                            ? $result->name
+                            : 'Tidak Diketahui',
+                    ];
+                }
+
+
+                // =================================
+                // Simpan report
+                // =================================
+
+                $reportsData[] = [
+
+                    'report' => $report,
+
+                    'formattedDate' =>
+                        $formattedDate,
+
+                    'creatorName' =>
+                        $creatorName,
+
+                    'activities' =>
+                        $activitiesWithNames,
+                ];
+            }
+
+
+            // =====================================
+            // 5. Data untuk view
+            // =====================================
+
+            $data = [
+
+                'title' =>
+                    'Rekap Laporan Harian',
+
+                'startDate' =>
+                    $start,
+
+                'endDate' =>
+                    $end,
+
+                'reports' =>
+                    $reportsData,
+            ];
+
+
+            // =====================================
+            // 6. Render HTML
+            // =====================================
+
+            ob_start();
+
+
+            extract($data);
+
+
+            require __DIR__ .
+                '/../View/User/Report/pdf-range.php';
+
+
+            $html = ob_get_clean();
+
+
+            // =====================================
+            // 7. Generate PDF
+            // =====================================
+
+            $pdf = $this->reportPdfService->generate(
+                $html
+            );
+
+
+            // =====================================
+            // 8. Pastikan PDF valid
+            // =====================================
+
+            if (substr($pdf, 0, 5) !== '%PDF-') {
+
+                http_response_code(500);
+
+                header(
+                    'Content-Type: text/plain; charset=UTF-8'
+                );
+
+                echo 'PDF tidak valid.';
+
+                exit();
+            }
+
+
+            // =====================================
+            // 9. Bersihkan output buffer
+            // =====================================
+
+            while (ob_get_level() > 0) {
+
+                ob_end_clean();
+            }
+
+
+            // =====================================
+            // 10. Pastikan header belum dikirim
+            // =====================================
+
+            if (headers_sent($file, $line)) {
+
+                http_response_code(500);
+
+                header(
+                    'Content-Type: text/plain; charset=UTF-8'
+                );
+
+                echo 'Headers sudah dikirim sebelumnya.';
+                echo PHP_EOL;
+                echo 'File: ' . $file;
+                echo PHP_EOL;
+                echo 'Line: ' . $line;
+
+                exit();
+            }
+
+
+            // =====================================
+            // 11. Format filename
+            // =====================================
+
+            $startDateIndo = $this->formatTanggalIndo($start);
+
+            $endDateIndo = $this->formatTanggalIndo($end);
+
+
+            $startFilename = strtolower(
+                str_replace(
+                    [', ', ' '],
+                    ['-', '-'],
+                    $startDateIndo
+                )
+            );
+
+
+            $endFilename = strtolower(
+                str_replace(
+                    [', ', ' '],
+                    ['-', '-'],
+                    $endDateIndo
+                )
+            );
+
+
+            $filename =
+                'laporan-' .
+                $startFilename .
+                '-sampai-' .
+                $endFilename .
+                '.pdf';
+
+
+            // =====================================
+            // 12. Header PDF
+            // =====================================
+
+            header(
+                'Content-Type: application/pdf'
+            );
+
+
+            header(
+                'Content-Disposition: inline; filename="' .
+                $filename .
+                '"'
+            );
+
+
+            header(
+                'Content-Length: ' .
+                strlen($pdf)
+            );
+
+            // =====================================
+            // 13. Output PDF
+            // =====================================
+
+            echo $pdf;
+
+            exit();
+
+        } catch (\Throwable $e) {
+
+            // =====================================
+            // Error handling
+            // =====================================
+
+            while (ob_get_level() > 0) {
+
+                ob_end_clean();
+            }
+
+
+            http_response_code(500);
+
+
+            header(
+                'Content-Type: text/plain; charset=UTF-8'
+            );
+
+
+            echo 'ERROR PDF RANGE';
+            echo PHP_EOL;
+            echo PHP_EOL;
+
+            echo 'Message: ';
+            echo $e->getMessage();
+
+            echo PHP_EOL;
+
+            echo 'File: ';
+            echo $e->getFile();
+
+            echo PHP_EOL;
+
+            echo 'Line: ';
+            echo $e->getLine();
+
+            echo PHP_EOL;
+
+            echo PHP_EOL;
+
+            echo 'TRACE:';
+            echo PHP_EOL;
+
+            echo $e->getTraceAsString();
+
+
+            exit();
+        }
     }
 
 }

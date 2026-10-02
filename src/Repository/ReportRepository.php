@@ -75,6 +75,39 @@ class ReportRepository
         return $this->mapRowToReport($result);
     }
 
+    public function findByDateRange(
+        \DateTimeImmutable $startDate,
+        \DateTimeImmutable $endDate
+    ): array {
+        $sql = "
+        SELECT
+            id,
+            report_date,
+            created_by,
+            created_at,
+            updated_at,
+            deleted_at
+        FROM reports
+        WHERE report_date BETWEEN :start_date AND :end_date
+        ORDER BY report_date DESC
+    ";
+
+        $statement = $this->pdo->prepare($sql);
+
+        $statement->execute([
+            'start_date' => $startDate->format('Y-m-d'),
+            'end_date' => $endDate->format('Y-m-d')
+        ]);
+
+        $reports = [];
+
+        foreach ($statement->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $reports[] = $this->mapRowToReport($row);
+        }
+
+        return $reports;
+    }
+
     public function findAll(): array
     {
         $stmt = $this->pdo->query("

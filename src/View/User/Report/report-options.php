@@ -21,8 +21,7 @@
                 </p>
             </div>
 
-            <a href="/report/option/add"
-                class="inline-flex items-center justify-center gap-2
+            <a href="/report/option/add" class="inline-flex items-center justify-center gap-2
                        px-5 py-3
                        bg-[#00d982] text-black
                        border-2 border-black
@@ -35,6 +34,102 @@
                 <span class="text-lg leading-none">+</span>
                 Tambah Opsi
             </a>
+
+        </div>
+
+        <!-- Search & Filter -->
+        <div class="px-5 py-4 bg-gray-50 border-b-2 border-black">
+
+            <div class="grid grid-cols-1 md:grid-cols-[1fr_220px_auto] gap-3">
+
+                <!-- Search -->
+                <div>
+                    <label for="searchOption" class="block mb-2 text-xs font-black uppercase tracking-wider text-black">
+                        Cari Opsi
+                    </label>
+
+                    <input type="text" id="searchOption" placeholder="Cari nama, deskripsi, ID..." class="w-full px-4 py-3
+                       bg-white text-black
+                       border-2 border-black
+                       font-bold text-sm
+                       outline-none
+                       focus:ring-4 focus:ring-[#00d982]
+                       shadow-[3px_3px_0px_0px_#000]">
+                </div>
+
+
+                <!-- Category -->
+                <div>
+                    <label for="filterCategory"
+                        class="block mb-2 text-xs font-black uppercase tracking-wider text-black">
+                        Kategori
+                    </label>
+
+                    <select id="filterCategory" class="w-full px-4 py-3
+                       bg-white text-black
+                       border-2 border-black
+                       font-bold text-sm
+                       outline-none
+                       focus:ring-4 focus:ring-[#00d982]
+                       shadow-[3px_3px_0px_0px_#000]">
+
+                        <option value="">Semua Kategori</option>
+                        <option value="target">Target</option>
+                        <option value="activity">Activity</option>
+                        <option value="personnel_strength">
+                            Kekuatan Personel
+                        </option>
+                        <option value="location">Lokasi</option>
+                        <option value="person_in_charge">
+                            Penanggung Jawab
+                        </option>
+                        <option value="expected_result">
+                            Hasil yang Ingin Dicapai
+                        </option>
+
+                    </select>
+                </div>
+
+
+                <!-- Reset -->
+                <div class="flex items-end">
+
+                    <button type="button" id="resetFilter" class="w-full md:w-auto
+           px-5 py-3
+           bg-white text-black
+           border-2 border-black
+           font-black text-sm uppercase
+           shadow-[3px_3px_0px_0px_#000]
+           hover:translate-x-[3px]
+           hover:translate-y-[3px]
+           hover:shadow-none
+           transition-all duration-150">
+
+                        Reset
+
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <!-- Result Counter -->
+            <div class="mt-4 flex items-center justify-between">
+
+                <p class="text-xs font-bold text-gray-600">
+                    Menampilkan
+                    <span id="visibleCount" class="text-black font-black">
+                        <?= count($options ?? []) ?>
+                    </span>
+                    dari
+                    <span class="font-black">
+                        <?= count($options ?? []) ?>
+                    </span>
+                    opsi
+                </p>
+
+            </div>
 
         </div>
 
@@ -141,33 +236,40 @@
                         <tr class="text-left">
 
                             <th class="px-5 py-4
-                                       font-black uppercase tracking-wider
-                                       text-xs text-black">
+           font-black uppercase tracking-wider
+           text-xs text-black">
                                 ID
                             </th>
 
                             <th class="px-5 py-4
-                                       font-black uppercase tracking-wider
-                                       text-xs text-black">
+           font-black uppercase tracking-wider
+           text-xs text-black">
                                 Kategori
                             </th>
 
                             <th class="px-5 py-4
-                                       font-black uppercase tracking-wider
-                                       text-xs text-black">
+           font-black uppercase tracking-wider
+           text-xs text-black">
                                 Nama Opsi
                             </th>
 
                             <th class="px-5 py-4
-                                       font-black uppercase tracking-wider
-                                       text-xs text-black">
+           font-black uppercase tracking-wider
+           text-xs text-black">
                                 Deskripsi
                             </th>
 
                             <th class="px-5 py-4
-                                       font-black uppercase tracking-wider
-                                       text-xs text-black
-                                       text-center">
+           font-black uppercase tracking-wider
+           text-xs text-black
+           text-center">
+                                Dilaksanakan
+                            </th>
+
+                            <th class="px-5 py-4
+           font-black uppercase tracking-wider
+           text-xs text-black
+           text-center">
                                 Aksi
                             </th>
 
@@ -182,7 +284,11 @@
 
                             <?php foreach ($options as $option) { ?>
 
-                                <tr class="hover:bg-[#eafff5] transition-colors duration-150">
+                                <tr class="option-row hover:bg-[#eafff5] transition-colors duration-150"
+                                    data-id="<?= $option->id ?>"
+                                    data-category="<?= htmlspecialchars(strtolower($option->category)) ?>"
+                                    data-name="<?= htmlspecialchars(strtolower($option->name)) ?>"
+                                    data-description="<?= htmlspecialchars(strtolower($option->description ?? '')) ?>">
 
                                     <!-- ID -->
                                     <td class="px-5 py-4 whitespace-nowrap">
@@ -232,6 +338,28 @@
 
                                     </td>
 
+                                    <!-- Usage -->
+                                    <td class="px-5 py-4 text-center">
+
+                                        <?php $totalUsage = $usage[$option->id] ?? 0; ?>
+
+                                        <span class="inline-flex items-center justify-center
+                 min-w-[70px]
+                 px-3 py-2
+                 <?= $totalUsage > 0
+                     ? 'bg-[#00d982]'
+                     : 'bg-gray-100' ?>
+                 text-black
+                 border-2 border-black
+                 font-black text-xs
+                 shadow-[3px_3px_0px_0px_#000]">
+
+                                            <?= $totalUsage ?>x
+
+                                        </span>
+
+                                    </td>
+
 
                                     <!-- Actions -->
                                     <td class="px-5 py-4">
@@ -239,8 +367,7 @@
                                         <div class="flex items-center justify-center gap-2">
 
                                             <!-- Edit -->
-                                            <a href="/report/option/edit/<?= $option->id ?>"
-                                                class="inline-flex items-center
+                                            <a href="/report/option/edit/<?= $option->id ?>" class="inline-flex items-center
                                                        px-3 py-2
                                                        bg-white text-black
                                                        border-2 border-black
@@ -255,13 +382,11 @@
 
 
                                             <!-- Delete -->
-                                            <form action="/report/option/delete/<?= $option->id ?>"
-                                                method="POST"
+                                            <form action="/report/option/delete/<?= $option->id ?>" method="POST"
                                                 onsubmit="return confirm('Apakah Anda yakin ingin menghapus opsi ini?');"
                                                 class="inline">
 
-                                                <button type="submit"
-                                                    class="inline-flex items-center
+                                                <button type="submit" class="inline-flex items-center
                                                            px-3 py-2
                                                            bg-red-500 text-white
                                                            border-2 border-black
@@ -311,8 +436,7 @@
                                             Tidak ada data opsi laporan yang dapat ditampilkan.
                                         </p>
 
-                                        <a href="/report/option/add"
-                                            class="mt-5
+                                        <a href="/report/option/add" class="mt-5
                                                    inline-flex
                                                    px-4 py-2
                                                    bg-[#00d982] text-black
@@ -345,3 +469,84 @@
     </div>
 
 </div>
+
+<script>
+
+    const searchInput = document.getElementById('searchOption');
+    const categoryFilter = document.getElementById('filterCategory');
+    const resetButton = document.getElementById('resetFilter');
+
+    const rows = document.querySelectorAll('.option-row');
+    const visibleCount = document.getElementById('visibleCount');
+
+
+    function filterOptions() {
+
+        const search = searchInput.value
+            .trim()
+            .toLowerCase();
+
+        const category = categoryFilter.value
+            .toLowerCase();
+
+        let count = 0;
+
+
+        rows.forEach(row => {
+
+            const id = row.dataset.id;
+            const rowCategory = row.dataset.category;
+            const name = row.dataset.name;
+            const description = row.dataset.description;
+
+            const matchSearch =
+                id.includes(search) ||
+                rowCategory.includes(search) ||
+                name.includes(search) ||
+                description.includes(search);
+
+            const matchCategory =
+                !category ||
+                rowCategory === category;
+
+
+            if (matchSearch && matchCategory) {
+
+                row.style.display = '';
+                count++;
+
+            } else {
+
+                row.style.display = 'none';
+
+            }
+
+        });
+
+
+        visibleCount.textContent = count;
+
+    }
+
+
+    // Search realtime
+    searchInput.addEventListener('input', filterOptions);
+
+
+    // Filter kategori
+    categoryFilter.addEventListener('change', filterOptions);
+
+
+    // Reset
+    resetButton.addEventListener('click', function (event) {
+
+        event.preventDefault();
+
+        searchInput.value = '';
+        categoryFilter.value = '';
+
+        filterOptions();
+
+    });
+
+</script>
