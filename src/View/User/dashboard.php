@@ -1,4 +1,4 @@
-<div class="min-h-screen bg-gray-50 py-12 px-4 mt-24 sm:px-6 lg:px-8">
+<div class="min-h-screen bg-gray-50 dark:bg-[#121212] py-12 px-4 sm:px-6 lg:px-8">
 
     <div class="max-w-6xl mx-auto">
 
@@ -9,10 +9,12 @@
 
                 <div>
 
-                    <div class="inline-flex items-center bg-black text-white
+                    <div class="inline-flex items-center
+                                bg-black text-white
+                                dark:bg-[#00d982] dark:text-black
                                 px-3 py-1 mb-4
                                 text-xs font-black uppercase tracking-widest
-                                border-2 border-black
+                                border-2 border-black dark:border-[#00d982]
                                 shadow-brutal-dark">
 
                         Daily Report
@@ -20,14 +22,14 @@
                     </div>
 
                     <h1 class="text-4xl sm:text-5xl font-black
-                               text-black uppercase tracking-tight leading-none">
+                               text-black dark:text-white uppercase tracking-tight leading-none">
 
                         Dashboard
 
                     </h1>
 
                     <p class="mt-4 text-sm sm:text-base
-                              font-medium text-gray-600 max-w-2xl">
+                              font-medium text-gray-600 dark:text-gray-400 max-w-2xl">
 
                         Selamat datang kembali.
                         Kelola dan pantau laporan harian SITIK Polresta Tuban
@@ -39,17 +41,19 @@
 
 
                 <!-- User Info -->
-                <div class="bg-white border-2 border-black
-                            shadow-brutal p-4 min-w-[260px]">
+                <div class="bg-white dark:bg-[#181818]
+                            border-2 border-black dark:border-white
+                            shadow-brutal dark:shadow-brutal-dark
+                            p-4 min-w-[260px]">
 
                     <p class="text-xs font-black uppercase
-                              tracking-wider text-gray-500">
+                              tracking-wider text-gray-500 dark:text-gray-400">
 
                         Login sebagai
 
                     </p>
 
-                    <p class="mt-1 text-base font-black text-black break-all">
+                    <p class="mt-1 text-base font-black text-black dark:text-white break-all">
 
                         <?= htmlspecialchars($user->email) ?>
 
@@ -69,7 +73,7 @@
 
             </div>
 
-            <div class="mt-8 border-b-4 border-black"></div>
+            <div class="mt-8 border-b-4 border-black dark:border-white"></div>
 
         </div>
 
@@ -79,10 +83,10 @@
 
             <div class="flex items-center gap-2 mb-5">
 
-                <span class="w-3 h-3 bg-[#00d982] border-2 border-black"></span>
+                <span class="w-3 h-3 bg-[#00d982] border-2 border-black dark:border-white"></span>
 
                 <span class="text-xs font-black uppercase
-                             tracking-[0.2em] text-gray-600">
+                             tracking-[0.2em] text-gray-600 dark:text-gray-400">
 
                     Akses Cepat
 
@@ -95,8 +99,7 @@
 
 
                 <!-- Buat Laporan -->
-                <a href="/report/add"
-                   class="group bg-[#00d982]
+                <a href="/report/add" class="group bg-[#00d982]
                           border-4 border-black
                           shadow-[6px_6px_0_0_#121212]
                           p-6
@@ -123,7 +126,7 @@
 
                     </div>
 
-                    <h2 class="mt-6 text-xl font-black uppercase">
+                    <h2 class="mt-6 text-xl font-black uppercase text-black">
 
                         Buat Laporan
 
@@ -139,10 +142,9 @@
 
 
                 <!-- Daftar Laporan -->
-                <a href="/reports"
-                   class="group bg-white
-                          border-4 border-black
-                          shadow-[6px_6px_0_0_#121212]
+                <a href="/reports" class="group bg-white dark:bg-[#181818]
+                          border-4 border-black dark:border-white
+                          shadow-[6px_6px_0_0_#121212] dark:shadow-[6px_6px_0_0_#00d982]
                           p-6
                           hover:translate-x-[6px]
                           hover:translate-y-[6px]
@@ -153,7 +155,8 @@
 
                         <div class="w-12 h-12
                                     bg-black text-white
-                                    border-2 border-black
+                                    dark:bg-white dark:text-black
+                                    border-2 border-black dark:border-white
                                     flex items-center justify-center
                                     text-xl font-black">
 
@@ -161,19 +164,19 @@
 
                         </div>
 
-                        <span class="text-2xl font-black">
+                        <span class="text-2xl font-black text-black dark:text-white">
                             →
                         </span>
 
                     </div>
 
-                    <h2 class="mt-6 text-xl font-black uppercase">
+                    <h2 class="mt-6 text-xl font-black uppercase text-black dark:text-white">
 
                         Daftar Laporan
 
                     </h2>
 
-                    <p class="mt-2 text-sm font-bold text-gray-600">
+                    <p class="mt-2 text-sm font-bold text-gray-600 dark:text-gray-400">
 
                         Lihat dan kelola laporan yang sudah dibuat.
 
@@ -183,8 +186,7 @@
 
 
                 <!-- Pelacakan -->
-                <a href="/report/tracking"
-                   class="group bg-black text-white
+                <a href="/report/tracking" class="group bg-black text-white
                           border-4 border-black
                           shadow-[6px_6px_0_0_#00d982]
                           p-6
@@ -236,19 +238,21 @@
 
             <!-- Main Information -->
             <div class="lg:col-span-2
-                        bg-white
-                        border-4 border-black
-                        shadow-[6px_6px_0_0_#121212]">
+                        bg-white dark:bg-[#181818]
+                        border-4 border-black dark:border-white
+                        shadow-[6px_6px_0_0_#121212] dark:shadow-[6px_6px_0_0_#00d982]">
 
                 <div class="bg-black text-white
+                            dark:bg-[#00d982] dark:text-black
                             px-6 py-4
-                            border-b-4 border-black">
+                            border-b-4 border-black dark:border-[#00d982]">
 
                     <div class="flex items-center gap-2">
 
                         <span class="w-3 h-3
                                      bg-[#00d982]
-                                     border-2 border-white"></span>
+                                     dark:bg-black
+                                     border-2 border-white dark:border-black"></span>
 
                         <h2 class="font-black uppercase tracking-wide">
 
@@ -263,14 +267,14 @@
 
                 <div class="p-6">
 
-                    <h3 class="text-2xl font-black uppercase">
+                    <h3 class="text-2xl font-black uppercase text-black dark:text-white">
 
                         Kelola laporan dengan lebih mudah.
 
                     </h3>
 
                     <p class="mt-3 text-sm font-medium
-                              leading-relaxed text-gray-600">
+                              leading-relaxed text-gray-600 dark:text-gray-400">
 
                         Gunakan menu laporan untuk membuat,
                         melihat, dan memantau kegiatan harian
@@ -281,16 +285,16 @@
 
                     <div class="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
 
-                        <div class="border-2 border-black p-4">
+                        <div class="border-2 border-black dark:border-white p-4">
 
                             <p class="text-xs font-black uppercase
-                                      tracking-wider text-gray-500">
+                                      tracking-wider text-gray-500 dark:text-gray-400">
 
                                 01
 
                             </p>
 
-                            <p class="mt-1 font-black uppercase">
+                            <p class="mt-1 font-black uppercase text-black dark:text-white">
 
                                 Buat Laporan
 
@@ -299,16 +303,16 @@
                         </div>
 
 
-                        <div class="border-2 border-black p-4">
+                        <div class="border-2 border-black dark:border-white p-4">
 
                             <p class="text-xs font-black uppercase
-                                      tracking-wider text-gray-500">
+                                      tracking-wider text-gray-500 dark:text-gray-400">
 
                                 02
 
                             </p>
 
-                            <p class="mt-1 font-black uppercase">
+                            <p class="mt-1 font-black uppercase text-black dark:text-white">
 
                                 Pantau Laporan
 
@@ -325,8 +329,8 @@
 
             <!-- Account -->
             <div class="bg-[#00d982]
-                        border-4 border-black
-                        shadow-[6px_6px_0_0_#121212]">
+                        border-4 border-black dark:border-white
+                        shadow-[6px_6px_0_0_#121212] dark:shadow-[6px_6px_0_0_#00d982]">
 
                 <div class="p-6">
 
@@ -342,14 +346,14 @@
 
 
                     <p class="mt-6 text-xs font-black
-                              uppercase tracking-widest">
+                              uppercase tracking-widest text-black">
 
                         Akun Anda
 
                     </p>
 
 
-                    <p class="mt-2 text-lg font-black break-all">
+                    <p class="mt-2 text-lg font-black break-all text-black">
 
                         <?= htmlspecialchars($user->email) ?>
 
@@ -358,7 +362,7 @@
 
                     <div class="mt-6 pt-5 border-t-2 border-black">
 
-                        <p class="text-xs font-bold">
+                        <p class="text-xs font-bold text-black">
 
                             Gunakan akun Anda untuk mengakses
                             fitur pelaporan yang tersedia.

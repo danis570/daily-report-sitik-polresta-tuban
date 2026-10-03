@@ -7,6 +7,7 @@ use PHPUnit\Framework\TestCase;
 use Unirow2026\DailyReportSitikPolrestaTuban\App\Database;
 use Unirow2026\DailyReportSitikPolrestaTuban\Model\Report\UserAddReportOptionRequest;
 use Unirow2026\DailyReportSitikPolrestaTuban\Model\Report\UserAddReportOptionResponse;
+use Unirow2026\DailyReportSitikPolrestaTuban\Repository\ReportItemRepository;
 use Unirow2026\DailyReportSitikPolrestaTuban\Repository\ReportOptionRepository;
 
 class ReportOptionServiceTest extends TestCase
@@ -18,7 +19,8 @@ class ReportOptionServiceTest extends TestCase
     {
         $connection = Database::getConnection();
         $this->reportOptionRepository = new ReportOptionRepository($connection);
-        $this->reportOptionService = new ReportOptionService($this->reportOptionRepository);
+        $reportItemRepository = new ReportItemRepository($connection);
+        $this->reportOptionService = new ReportOptionService($this->reportOptionRepository, $reportItemRepository);
 
         // Bersihkan data table sebelum tiap pengujian berjalan
         $this->reportOptionRepository->deleteAll();

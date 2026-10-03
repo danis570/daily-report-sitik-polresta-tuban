@@ -54,98 +54,114 @@ class ReportController extends BaseController
     }
 
     public function reports()
-    {
-        $startDate = $_GET['start_date'] ?? null;
-        $endDate = $_GET['end_date'] ?? null;
+{
+    $startDate = $_GET['start_date'] ?? null;
+    $endDate   = $_GET['end_date']   ?? null;
+    $limit     = 10;
 
-        if ($startDate !== null && $endDate !== null) {
+    // --- Validasi rentang tanggal ---
+    if ($startDate !== null && $endDate !== null) {
 
-            try {
-                $startDateObject = new DateTimeImmutable($startDate);
-                $endDateObject = new DateTimeImmutable($endDate);
-            } catch (Exception $e) {
-                View::render('User', 'User/Report/reports', [
-                    'title' => 'Kelola Laporan Harian',
-                    'current' => 'report',
-                    'error' => 'Format tanggal tidak valid.',
-                    'reports' => [],
-                    'startDate' => $startDate,
-                    'endDate' => $endDate
-                ]);
-                return;
-            }
-
-            // Untuk sekarang kita gunakan method baru ini
-            $allReports = $this->reportRepository->findByDateRange(
-                $startDateObject,
-                $endDateObject
-            );
-
-        } else {
-
-            $allReports = $this->reportRepository->findAll();
-        }
-
-
-        if (!empty($allReports)) {
-
-            $reportsWithProfile = [];
-
-            foreach ($allReports as $report) {
-
-                $creatorName = 'User telah dihapus';
-
-                if ($report->createdBy !== null) {
-
-                    $profile = $this->profileRepository->findByUserId(
-                        (int) $report->createdBy
-                    );
-
-                    if ($profile !== null && !empty($profile->name)) {
-                        $creatorName = $profile->name;
-                    } else {
-                        $user = $this->userRepository->findById(
-                            (int) $report->createdBy
-                        );
-
-                        if ($user !== null) {
-                            $creatorName = $user->email;
-                        }
-                    }
-                }
-
-                $formattedDate = $this->formatTanggalIndo($report->reportDate);
-
-                $reportsWithProfile[] = [
-                    'report' => $report,
-                    'formattedDate' => $formattedDate,
-                    'creatorName' => $creatorName
-                ];
-            }
-
+        // 1. Cek format tanggal
+        try {
+            $startObj = new DateTimeImmutable($startDate);
+            $endObj   = new DateTimeImmutable($endDate);
+        } catch (Exception $e) {
             View::render('User', 'User/Report/reports', [
-                'title' => 'Kelola Laporan Harian',
-                'current' => 'report',
-                'reports' => $reportsWithProfile,
+                'title'     => 'Kelola Laporan Harian',
+                'current'   => 'report',
+                'error'     => 'Format tanggal tidak valid.',
+                'reports'   => [],
                 'startDate' => $startDate,
-                'endDate' => $endDate
+                'endDate'   => $endDate,
+                'total'     => 0,
+                'limit'     => $limit,
+                'hasMore'   => false,
             ]);
-
             return;
         }
 
+        // 2. Cek end < start
+        if ($endDate < $startDate) {
+            View::render('User', 'User/Report/reports', [
+                'title'     => 'Kelola Laporan Harian',
+                'current'   => 'report',
+                'error'     => 'Tanggal akhir tidak boleh lebih kecil dari tanggal mulai.',
+                'reports'   => [],
+                'startDate' => $startDate,
+                'endDate'   => $endDate,
+                'total'     => 0,
+                'limit'     => $limit,
+                'hasMore'   => false,
+            ]);
+            return;
+        }
 
-        View::render('User', 'User/Report/reports', [
-            'title' => 'Kelola Laporan Harian',
-            'current' => 'report',
-            'error' => ($startDate !== null && $endDate !== null)
-                ? 'Tidak ada laporan pada rentang tanggal tersebut.'
-                : 'Belum ada report',
-            'reports' => [],
-            'startDate' => $startDate,
-            'endDate' => $endDate
-        ]);
+        // 3. Cek rentang maksimal 31 hari
+        $diffDays = $startObj->diff($endObj)->days + 1; // inclusive
+        if ($diffDays > 31) {
+            View::render('User', 'User/Report/reports', [
+                'title'     => 'Kelola Laporan Harian',
+                'current'   => 'report',
+                'error'     => 'Rentang tanggal maksimal 31 hari (1 bulan). Rentang Anda: ' . $diffDays . ' hari.',
+                'reports'   => [],
+                'startDate' => $startDate,
+                'endDate'   => $endDate,
+                'total'     => 0,
+                'limit'     => $limit,
+                'hasMore'   => false,
+            ]);
+            return;
+        }
+
+        // ✅ Filter valid → tampilkan SEMUA
+        $total   = $this->reportRepository->countByDateRange($startObj, $endObj);
+        $reports = $this->reportRepository->findByDateRange($startObj, $endObj);
+    } else {
+        // Tanpa filter → 10 terbaru
+        $total   = $this->reportRepository->countAll();
+        $reports = $this->reportRepository->findLatest($limit);
     }
+
+    // --- Format data (creator name + tanggal Indonesia) ---
+    $reportsWithProfile = [];
+
+    foreach ($reports as $report) {
+        $creatorName = 'User telah dihapus';
+
+        if ($report->createdBy !== null) {
+            $profile = $this->profileRepository->findByUserId((int) $report->createdBy);
+
+            if ($profile !== null && !empty($profile->name)) {
+                $creatorName = $profile->name;
+            } else {
+                $user = $this->userRepository->findById((int) $report->createdBy);
+                if ($user !== null) {
+                    $creatorName = $user->email;
+                }
+            }
+        }
+
+        $reportsWithProfile[] = [
+            'report'        => $report,
+            'formattedDate' => $this->formatTanggalIndo($report->reportDate),
+            'creatorName'   => $creatorName,
+        ];
+    }
+
+    // --- Render ---
+    View::render('User', 'User/Report/reports', [
+        'title'     => 'Kelola Laporan Harian',
+        'current'   => 'report',
+        'reports'   => $reportsWithProfile,
+        'startDate' => $startDate,
+        'endDate'   => $endDate,
+        'total'     => $total,
+        'limit'     => $limit,
+        'hasMore'   => $total > $limit,
+        'error'     => null,
+    ]);
+}
 
     private function formatTanggalIndo(DateTimeImmutable $date): string
     {
@@ -189,7 +205,7 @@ class ReportController extends BaseController
     {
         View::render('User', 'User/Report/add', [
             'title' => 'Tambah Laporan Harian',
-            'current' => 'report'
+            'current' => 'add'
         ]);
     }
 
@@ -211,12 +227,15 @@ class ReportController extends BaseController
 
         try {
             $this->reportService->create($request);
-            header("Location: /reports");
-            exit();
+            View::render('User', 'User/Report/add', [
+                'title' => 'Tambah Laporan Harian',
+                'current' => 'add',
+                'success' => 'Sukses menambahkan laporan baru pergi ke menu laporan untuk menambahkan item kegiatan'
+            ]);
         } catch (Exception $exception) {
             View::render('User', 'User/Report/add', [
                 'title' => 'Tambah Laporan Harian',
-                'current' => 'report',
+                'current' => 'add',
                 'error' => $exception->getMessage()
             ]);
         }
@@ -244,7 +263,7 @@ class ReportController extends BaseController
         }
 
         $profile = $this->profileRepository->findByUserId($report->createdBy);
-        $creatorName = $profile && !empty($profile->name) ? $profile->name : 'Tidak Diketahui';
+        $creatorName = $profile && !empty($profile->name) ? $profile->name : 'User Telah Dihapus';
 
         $formattedDate = $this->formatTanggalIndo($report->reportDate);
 
@@ -331,9 +350,12 @@ class ReportController extends BaseController
             $this->reportService->update($request);
 
             // 3. Sukses: Set flash message dan alihkan kembali ke halaman rekap utama
-            View::flashMessage("Tanggal induk laporan berhasil diperbarui!");
-            header("Location: /reports");
-            exit();
+            View::render('User', 'User/Report/edit', [
+                'title' => 'Ubah Induk Laporan Harian',
+                'current' => 'report',
+                'success' => 'Sukses edit, silahkan kembali ke halaman laporan untuk melihat perubahan',
+                'report' => $report
+            ]);
 
         } catch (Exception $exception) {
             // 4. Gagal: Tampilkan kembali formulir edit bawa pesan error
@@ -365,99 +387,115 @@ class ReportController extends BaseController
         }
     }
 
-    public function tracking(): void
-    {
-        $category = $_GET['category'] ?? null;
+public function tracking(): void
+{
+    $category  = $_GET['category']   ?? null;
+    $startDate = $_GET['start_date'] ?? null;
+    $endDate   = $_GET['end_date']   ?? null;
 
-        $options = [];
+    $options = [];
+    if ($category !== null && $category !== '') {
+        $options = $this->reportOptionRepository->findByCategory($category);
+    }
 
-        if ($category !== null && $category !== '') {
-            $options = $this->reportOptionRepository
-                ->findByCategory($category);
-        }
+    View::render(
+        'user',
+        'User/Report/tracking',
+        [
+            'title'      => 'Pelacakan Laporan',
+            'current'    => 'tracking',
+            'categories' => [
+                'target'             => 'SASARAN',
+                'activity'           => 'KEGIATAN',
+                'personnel_strength' => 'KUAT PERS',
+                'location'           => 'LOKASI',
+                'person_in_charge'   => 'PENANGGUNG JAWAB',
+                'expected_result'    => 'HASIL YANG INGIN DI CAPAI',
+            ],
+            'selectedCategory' => $category,
+            'selectedStart'    => $startDate,
+            'selectedEnd'      => $endDate,
+            'options'          => $options,
+            'result'           => null,
+            'error'            => null,
+        ]
+    );
+}
+
+public function postTracking(): void
+{
+    try {
+        $request = new ReportTrackingRequest();
+
+        $request->category = $_POST['category'] ?? '';
+        $request->optionId = (int) ($_POST['option_id'] ?? 0);
+
+        $request->startDate = new DateTimeImmutable(
+            $_POST['start_date'] ?? ''
+        );
+
+        $request->endDate = new DateTimeImmutable(
+            $_POST['end_date'] ?? ''
+        );
+
+        $result = $this->reportTrackingService->track($request);
 
         View::render(
             'user',
             'User/Report/tracking',
             [
-                'title' => 'Pelacakan Laporan',
-                'current' => 'report',
+                'title'      => 'Pelacakan Laporan',
+                'current'    => 'tracking',
                 'categories' => [
-                    'target' => 'Target',
-                    'activity' => 'Activity',
-                    'personnel_strength' => 'Kekuatan Personel',
-                    'location' => 'Lokasi',
-                    'person_in_charge' => 'Penanggung Jawab',
-                    'expected_result' => 'Hasil yang Ingin Dicapai',
+                    'target'             => 'SASARAN',
+                    'activity'           => 'KEGIATAN',
+                    'personnel_strength' => 'KUAT PERS',
+                    'location'           => 'LOKASI',
+                    'person_in_charge'   => 'PENANGGUNG JAWAB',
+                    'expected_result'    => 'HASIL YANG INGIN DI CAPAI',
                 ],
+                'options' => $this->reportOptionRepository
+                    ->findByCategory($request->category),
+                'selectedCategory' => $request->category,
+                'selectedStart'    => $_POST['start_date'] ?? null,
+                'selectedEnd'      => $_POST['end_date']   ?? null,
+                'result'           => $result,
+                'error'            => null,
+            ]
+        );
+    } catch (Throwable $e) {
+        $category  = $_POST['category']   ?? '';
+        $startDate = $_POST['start_date'] ?? null;
+        $endDate   = $_POST['end_date']   ?? null;
 
+        $options = $category
+            ? $this->reportOptionRepository->findByCategory($category)
+            : [];
+
+        View::render(
+            'user',
+            'User/Report/tracking',
+            [
+                'title'      => 'Pelacakan Laporan',
+                'current'    => 'tracking',
+                'categories' => [
+                    'target'             => 'SASARAN',
+                    'activity'           => 'KEGIATAN',
+                    'personnel_strength' => 'KUAT PERS',
+                    'location'           => 'LOKASI',
+                    'person_in_charge'   => 'PENANGGUNG JAWAB',
+                    'expected_result'    => 'HASIL YANG INGIN DI CAPAI',
+                ],
+                'options'          => $options,
                 'selectedCategory' => $category,
-                'options' => $options,
-                'result' => null,
-                'error' => null,
+                'selectedStart'    => $startDate,
+                'selectedEnd'      => $endDate,
+                'result'           => null,
+                'error'            => $e->getMessage(),
             ]
         );
     }
-
-    public function postTracking(): void
-    {
-        try {
-            $request = new ReportTrackingRequest();
-
-            $request->category = $_POST['category'] ?? '';
-            $request->optionId = (int) ($_POST['option_id'] ?? 0);
-
-            $request->startDate = new DateTimeImmutable(
-                $_POST['start_date'] ?? ''
-            );
-
-            $request->endDate = new DateTimeImmutable(
-                $_POST['end_date'] ?? ''
-            );
-
-            $result = $this->reportTrackingService->track($request);
-
-            View::render(
-                'user',
-                'User/Report/tracking',
-                [
-                    'title' => 'Pelacakan Laporan',
-                    'current' => 'report',
-                    'categories' => [
-                        'target' => 'Target',
-                        'activity' => 'Activity',
-                        'personnel_strength' => 'Kekuatan Personel',
-                        'location' => 'Lokasi',
-                        'person_in_charge' => 'Penanggung Jawab',
-                        'expected_result' => 'Hasil yang Ingin Dicapai',
-                    ],
-                    'options' => $this->reportOptionRepository
-                        ->findByCategory($request->category),
-                    'result' => $result,
-                ]
-            );
-        } catch (Throwable $e) {
-            View::render(
-                'user',
-                'User/Report/tracking',
-                [
-                    'title' => 'Pelacakan Laporan',
-                    'current' => 'report',
-                    'categories' => [
-                        'target' => 'Target',
-                        'activity' => 'Activity',
-                        'personnel_strength' => 'Kekuatan Personel',
-                        'location' => 'Lokasi',
-                        'person_in_charge' => 'Penanggung Jawab',
-                        'expected_result' => 'Hasil yang Ingin Dicapai',
-                    ],
-                    'options' => [],
-                    'result' => null,
-                    'error' => $e->getMessage(),
-                ]
-            );
-        }
-    }
+}
 
     public function pdf(string $date): void
     {

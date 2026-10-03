@@ -200,6 +200,73 @@ class ReportItemRepository
         return (int) $stmt->fetchColumn();
     }
 
+    /**
+     * Hitung berapa kali option_id dipakai di report_items.
+     * Cek semua kolom yang bisa berisi option_id.
+     */
+    public function countUsageByOptionId(int $optionId): int
+    {
+        $stmt = $this->pdo->prepare("
+        SELECT COUNT(*)
+        FROM report_items
+        WHERE
+            target_option_id              = :id1
+         OR activity_option_id            = :id2
+         OR personnel_strength_option_id  = :id3
+         OR location_option_id            = :id4
+         OR person_in_charge_option_id    = :id5
+         OR expected_result_option_id     = :id6
+    ");
+
+        $stmt->execute([
+            ':id1' => $optionId,
+            ':id2' => $optionId,
+            ':id3' => $optionId,
+            ':id4' => $optionId,
+            ':id5' => $optionId,
+            ':id6' => $optionId,
+        ]);
+
+        return (int) $stmt->fetchColumn();
+    }
+
+    /**
+     * Ambil detail pemakaian option_id — untuk pesan error yang lebih informatif.
+     * Return array of { item_id, item_no, report_id, report_date }.
+     */
+    public function findUsageDetailsByOptionId(int $optionId, int $limit = 10): array
+    {
+        $stmt = $this->pdo->prepare("
+        SELECT
+            ri.id         AS item_id,
+            ri.item_no    AS item_no,
+            r.id          AS report_id,
+            r.report_date AS report_date
+        FROM report_items ri
+        INNER JOIN reports r ON r.id = ri.report_id
+        WHERE
+            ri.target_option_id              = :id1
+         OR ri.activity_option_id            = :id2
+         OR ri.personnel_strength_option_id  = :id3
+         OR ri.location_option_id            = :id4
+         OR ri.person_in_charge_option_id    = :id5
+         OR ri.expected_result_option_id     = :id6
+        ORDER BY r.report_date DESC
+        LIMIT :limit
+    ");
+
+        $stmt->bindValue(':id1', $optionId, PDO::PARAM_INT);
+        $stmt->bindValue(':id2', $optionId, PDO::PARAM_INT);
+        $stmt->bindValue(':id3', $optionId, PDO::PARAM_INT);
+        $stmt->bindValue(':id4', $optionId, PDO::PARAM_INT);
+        $stmt->bindValue(':id5', $optionId, PDO::PARAM_INT);
+        $stmt->bindValue(':id6', $optionId, PDO::PARAM_INT);
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->execute();
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     public function countAllOptionsUsage(): array
     {
         $stmt = $this->pdo->query("

@@ -1,29 +1,9 @@
-<div class="min-h-screen bg-gray-50 py-12 px-4 mt-24 sm:px-6 lg:px-8">
+<div class="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
 
-    <div class="max-w-4xl mx-auto">
+    <div class="max-w-6xl mx-auto">
 
         <!-- Header -->
         <div class="mb-8">
-
-            <a href="/" class="inline-flex items-center gap-2 px-4 py-2 mb-6
-                       bg-white border-2 border-black
-                       font-bold text-black
-                       shadow-[4px_4px_0px_0px_#000]
-                       hover:shadow-none
-                       hover:translate-x-1 hover:translate-y-1
-                       transition-all">
-                ← Kembali ke Beranda
-            </a>
-
-            <div class="flex items-center gap-3 mb-4">
-                <span class="bg-black text-white px-3 py-1 text-xs font-black uppercase">
-                    Account Settings
-                </span>
-
-                <span class="text-sm font-bold text-gray-500">
-                    Edit Profile
-                </span>
-            </div>
 
             <h1 class="text-4xl sm:text-5xl font-black uppercase tracking-tight text-black">
                 Edit Profil
@@ -36,42 +16,131 @@
 
 
         <!-- Alert Error -->
-        <?php if (!empty($error)) { ?>
+        <?php if (!empty($error)): ?>
+            <div id="error-message" class="mb-6 p-5
+               bg-red-100 dark:bg-red-900/30
+               border-2 border-black dark:border-white
+               shadow-[6px_6px_0px_0px_#000] dark:shadow-[6px_6px_0px_0px_#00d982]
+               flex items-start gap-4
+               transition-all duration-200" role="alert">
 
-            <div class="mb-6 p-5 bg-red-100 border-2 border-black
-                        shadow-[6px_6px_0px_0px_#000]">
+                <div class="flex-shrink-0 w-9 h-9
+                    flex items-center justify-center
+                    bg-red-500 border-2 border-[#121212]">
+                    <svg class="w-5 h-5 text-white" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd"
+                            d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                            clip-rule="evenodd" />
+                    </svg>
+                </div>
 
-                <p class="font-black uppercase text-red-700">
-                    Terjadi Kesalahan
-                </p>
+                <div class="flex-1 min-w-0">
+                    <p class="font-black uppercase text-sm text-red-700 dark:text-red-400">
+                        Terjadi Kesalahan
+                    </p>
+                    <p class="mt-1 text-sm font-bold text-black dark:text-white break-words">
+                        <?= htmlspecialchars($error) ?>
+                    </p>
+                </div>
 
-                <p class="mt-1 text-sm font-bold text-black">
-                    <?= htmlspecialchars($error) ?>
-                </p>
+                <button type="button" id="error-close" class="shrink-0 w-8 h-8 flex items-center justify-center
+                   bg-[#121212] text-white border-2 border-[#121212]
+                   hover:bg-white hover:text-[#121212]
+                   transition-colors cursor-pointer" aria-label="Tutup notifikasi">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M6 6l12 12M6 18L18 6" />
+                    </svg>
+                </button>
 
             </div>
-
-        <?php } ?>
+        <?php endif; ?>
 
 
         <!-- Alert Success -->
-        <?php if (!empty($success)) { ?>
+        <?php if (!empty($success)): ?>
+            <div id="success-message" class="mb-6 p-5
+               bg-[#00d982]
+               border-2 border-black dark:border-white
+               shadow-[6px_6px_0px_0px_#000] dark:shadow-[6px_6px_0px_0px_#00d982]
+               flex items-start gap-4
+               transition-all duration-200" role="alert">
 
-            <div class="mb-6 p-5 bg-[#00d982] border-2 border-black
-                        shadow-[6px_6px_0px_0px_#000]">
+                <div class="flex-shrink-0 w-9 h-9
+                    flex items-center justify-center
+                    bg-[#121212] border-2 border-[#121212]">
+                    <svg class="w-5 h-5 text-[#00d982]" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd"
+                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                            clip-rule="evenodd" />
+                    </svg>
+                </div>
 
-                <p class="font-black uppercase text-black">
-                    Berhasil
-                </p>
+                <div class="flex-1 min-w-0">
+                    <p class="font-black uppercase text-sm text-black">
+                        Berhasil
+                    </p>
+                    <p class="mt-1 text-sm font-bold text-black break-words">
+                        <?= htmlspecialchars($success) ?>
+                    </p>
+                </div>
 
-                <p class="mt-1 text-sm font-bold text-black">
-                    <?= htmlspecialchars($success) ?>
-                </p>
+                <button type="button" id="success-close" class="shrink-0 w-8 h-8 flex items-center justify-center
+                   bg-[#121212] text-[#00d982] border-2 border-[#121212]
+                   hover:bg-white hover:text-black
+                   transition-colors cursor-pointer" aria-label="Tutup notifikasi">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M6 6l12 12M6 18L18 6" />
+                    </svg>
+                </button>
+
+            </div>
+        <?php endif; ?>
+
+
+        <!-- Flash Message (Global) -->
+        <?php if (!empty($_SESSION['flash_message'])): ?>
+            <div id="flash-message" class="mb-6 p-5
+               bg-[#00d982]
+               border-2 border-black dark:border-white
+               shadow-[6px_6px_0px_0px_#000] dark:shadow-[6px_6px_0px_0px_#00d982]
+               flex items-start gap-4
+               transition-all duration-200" role="alert">
+
+                <div class="flex-shrink-0 w-9 h-9
+                    flex items-center justify-center
+                    bg-[#121212] border-2 border-[#121212]">
+                    <svg class="w-5 h-5 text-[#00d982]" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd"
+                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                            clip-rule="evenodd" />
+                    </svg>
+                </div>
+
+                <div class="flex-1 min-w-0">
+                    <p class="font-black uppercase text-sm text-black">
+                        Berhasil
+                    </p>
+                    <p class="mt-1 text-sm font-bold text-black break-words">
+                        <?= htmlspecialchars($_SESSION['flash_message']) ?>
+                    </p>
+                </div>
+
+                <button type="button" id="flash-close" class="shrink-0 w-8 h-8 flex items-center justify-center
+                   bg-[#121212] text-[#00d982] border-2 border-[#121212]
+                   hover:bg-white hover:text-black
+                   transition-colors cursor-pointer" aria-label="Tutup notifikasi">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M6 6l12 12M6 18L18 6" />
+                    </svg>
+                </button>
 
             </div>
 
-        <?php } ?>
-
+            <?php \Unirow2026\DailyReportSitikPolrestaTuban\App\View::clearFlashMessage(); ?>
+        <?php endif; ?>
 
         <!-- Form -->
         <div class="bg-white border-2 border-black
@@ -329,5 +398,61 @@
     avatarPreview.addEventListener('error', function () {
         avatarPreview.classList.add('hidden');
         avatarPlaceholder.classList.remove('hidden');
+    });
+</script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+
+        /* ==========================================================
+         * TOMBOL CLOSE — SEMUA MESSAGE
+         * ========================================================== */
+        (() => {
+            // Error message
+            const error = document.getElementById('error-message');
+            const errorClose = document.getElementById('error-close');
+
+            if (error && errorClose) {
+                errorClose.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    fadeOut(error);
+                });
+            }
+
+            // Success message
+            const success = document.getElementById('success-message');
+            const successClose = document.getElementById('success-close');
+
+            if (success && successClose) {
+                successClose.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    fadeOut(success);
+                });
+            }
+
+            // Flash message
+            const flash = document.getElementById('flash-message');
+            const flashClose = document.getElementById('flash-close');
+
+            if (flash && flashClose) {
+                flashClose.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    fadeOut(flash);
+                });
+            }
+
+            // --------------------------------------------------
+            // Helper: fade out + remove
+            // --------------------------------------------------
+            function fadeOut(el) {
+                el.style.opacity = '0';
+                el.style.transform = 'translateY(-10px)';
+                setTimeout(() => el.remove(), 200);
+            }
+        })();
+
     });
 </script>

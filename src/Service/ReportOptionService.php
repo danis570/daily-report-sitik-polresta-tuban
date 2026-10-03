@@ -8,16 +8,19 @@ use Unirow2026\DailyReportSitikPolrestaTuban\Model\Report\UserAddReportOptionReq
 use Unirow2026\DailyReportSitikPolrestaTuban\Model\Report\UserAddReportOptionResponse;
 use Unirow2026\DailyReportSitikPolrestaTuban\Model\Report\UserUpdateReportOptionRequest;
 use Unirow2026\DailyReportSitikPolrestaTuban\Model\Report\UserUpdateReportOptionResponse;
+use Unirow2026\DailyReportSitikPolrestaTuban\Repository\ReportItemRepository;
 use Unirow2026\DailyReportSitikPolrestaTuban\Repository\ReportOptionRepository;
 
 
 class ReportOptionService
 {
     private ReportOptionRepository $reportOptionRepository;
+    private ReportItemRepository $reportItemRepository;
 
-    public function __construct(ReportOptionRepository $reportOptionRepository)
+    public function __construct(ReportOptionRepository $reportOptionRepository, ReportItemRepository $reportItemRepository)
     {
         $this->reportOptionRepository = $reportOptionRepository;
+        $this->reportItemRepository = $reportItemRepository;
     }
 
     public function create(UserAddReportOptionRequest $request): UserAddReportOptionResponse
@@ -89,12 +92,25 @@ class ReportOptionService
 
     public function delete(int $id): void
     {
-        // Cek dulu apakah datanya ada sebelum dihapus
+        // 1. Cek dulu apakah datanya ada sebelum dihapus
         $existingOption = $this->reportOptionRepository->findById($id);
+
         if ($existingOption === null) {
             throw new Exception("Pilihan laporan tidak ditemukan atau sudah dihapus.");
         }
 
+        // 2. Cek apakah opsi masih dipakai di report_items
+        $usageCount = $this->reportItemRepository->countUsageByOptionId($id);
+
+        if ($usageCount > 0) {
+            throw new Exception(
+                "Pilihan laporan tidak dapat dihapus karena masih digunakan pada " .
+                $usageCount . " rincian giat. " .
+                "Hapus atau ubah rincian giat yang menggunakan opsi ini terlebih dahulu."
+            );
+        }
+
+        // 3. Aman dihapus
         $this->reportOptionRepository->deleteById($id);
     }
 

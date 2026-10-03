@@ -36,7 +36,7 @@ class ReportOptionController extends BaseController
         // 4. Instansiasi objek khusus untuk ReportController
         $this->reportOptionRepository = new ReportOptionRepository($connection);
         $this->reportItemRepository = new ReportItemRepository($connection);
-        $this->reportOptionService = new ReportOptionService($this->reportOptionRepository);
+        $this->reportOptionService = new ReportOptionService($this->reportOptionRepository, $this->reportItemRepository);
     }
 
     public function reportOptions()
@@ -48,7 +48,7 @@ class ReportOptionController extends BaseController
         if (!empty($allOptions)) {
             View::render('User', 'User/Report/report-options', [
                 'title' => 'Kelola Pilihan Laporan',
-                'current' => 'report',
+                'current' => 'options',
                 'options' => $allOptions,
                 'usage' => $usage
             ]);
@@ -58,7 +58,7 @@ class ReportOptionController extends BaseController
 
         View::render('User', 'User/Report/report-options', [
             'title' => 'Kelola Pilihan Laporan',
-            'current' => 'report',
+            'current' => 'options',
             'error' => 'Belum ada pilihan laporan yang terdaftar',
             'options' => [],
             'usage' => []
@@ -70,7 +70,7 @@ class ReportOptionController extends BaseController
         // Menampilkan halaman form input untuk Report Option
         View::render('User', 'User/Report/report-option-add', [
             'title' => 'Tambah Pilihan Laporan Baru',
-            'current' => 'report'
+            'current' => 'options'
         ]);
     }
 
@@ -94,7 +94,7 @@ class ReportOptionController extends BaseController
             // 4. Jika gagal (kategori/nama kosong atau duplikat), kembalikan form dengan pesan error
             View::render('User', 'User/Report/report-option-add', [
                 'title' => 'Tambah Pilihan Laporan Baru',
-                'current' => 'report',
+                'current' => 'options',
                 'error' => $exception->getMessage(),
                 // Kirim balik data input lama agar user tidak perlu mengetik ulang jika ada error
                 'oldInput' => $_POST
@@ -109,7 +109,7 @@ class ReportOptionController extends BaseController
         if ($option === null) {
             View::render('User', 'User/Report/report-options', [
                 'title' => 'Kelola Pilihan Laporan',
-                'current' => 'report',
+                'current' => 'options',
                 'error' => 'Pilihan laporan tidak ditemukan.',
                 'options' => $this->reportOptionRepository->findAll()
             ]);
@@ -119,7 +119,7 @@ class ReportOptionController extends BaseController
         // 3. Render halaman formulir edit dan kirim data option-nya
         View::render('User', 'User/Report/report-option-edit', [
             'title' => 'Ubah Pilihan Laporan',
-            'current' => 'report',
+            'current' => 'options',
             'option' => $option
         ]);
     }
@@ -145,7 +145,7 @@ class ReportOptionController extends BaseController
 
             View::render('User', 'User/Report/report-option-edit', [
                 'title' => 'Ubah Pilihan Laporan',
-                'current' => 'report',
+                'current' => 'options',
                 'error' => $exception->getMessage(),
                 'option' => $option
             ]);
@@ -166,7 +166,7 @@ class ReportOptionController extends BaseController
         } catch (Exception $exception) {
             View::render('User', 'User/Report/report-options', [
                 'title' => 'Kelola Pilihan Laporan',
-                'current' => 'report',
+                'current' => 'options',
                 'error' => $exception->getMessage(),
                 'options' => $this->reportOptionRepository->findAll()
             ]);

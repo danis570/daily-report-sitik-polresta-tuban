@@ -75,28 +75,116 @@ class ReportRepository
         return $this->mapRowToReport($result);
     }
 
+    public function countAll(): int
+    {
+        $stmt = $this->pdo->query("
+            SELECT COUNT(*)
+            FROM reports
+        ");
+
+        return (int) $stmt->fetchColumn();
+    }
+
+    public function findLatest(int $limit = 10): array
+    {
+        $stmt = $this->pdo->prepare("
+            SELECT *
+            FROM reports
+            ORDER BY report_date DESC, id DESC
+            LIMIT :limit
+        ");
+
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->execute();
+
+        $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        if (!$result) {
+            return [];
+        }
+
+        $reports = [];
+
+        foreach ($result as $row) {
+            $reports[] = $this->mapRowToReport($row);
+        }
+
+        return $reports;
+    }
+
+    public function countByDateRange(
+        DateTimeImmutable $start,
+        DateTimeImmutable $end
+    ): int {
+        $stmt = $this->pdo->prepare("
+            SELECT COUNT(*)
+            FROM reports
+            WHERE report_date BETWEEN :start AND :end
+        ");
+
+        $stmt->execute([
+            ':start' => $start->format('Y-m-d'),
+            ':end'   => $end->format('Y-m-d'),
+        ]);
+
+        return (int) $stmt->fetchColumn();
+    }
+
+    public function findByDateRangeLatest(
+        DateTimeImmutable $start,
+        DateTimeImmutable $end,
+        int $limit = 10
+    ): array {
+        $stmt = $this->pdo->prepare("
+            SELECT *
+            FROM reports
+            WHERE report_date BETWEEN :start AND :end
+            ORDER BY report_date DESC, id DESC
+            LIMIT :limit
+        ");
+
+        $stmt->bindValue(':start', $start->format('Y-m-d'));
+        $stmt->bindValue(':end',   $end->format('Y-m-d'));
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->execute();
+
+        $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        if (!$result) {
+            return [];
+        }
+
+        $reports = [];
+
+        foreach ($result as $row) {
+            $reports[] = $this->mapRowToReport($row);
+        }
+
+        return $reports;
+    }
+
     public function findByDateRange(
         \DateTimeImmutable $startDate,
         \DateTimeImmutable $endDate
     ): array {
         $sql = "
-        SELECT
-            id,
-            report_date,
-            created_by,
-            created_at,
-            updated_at,
-            deleted_at
-        FROM reports
-        WHERE report_date BETWEEN :start_date AND :end_date
-        ORDER BY report_date DESC
-    ";
+            SELECT
+                id,
+                report_date,
+                created_by,
+                created_at,
+                updated_at,
+                deleted_at
+            FROM reports
+            WHERE report_date BETWEEN :start_date AND :end_date
+            ORDER BY report_date DESC
+        ";
 
         $statement = $this->pdo->prepare($sql);
 
         $statement->execute([
             'start_date' => $startDate->format('Y-m-d'),
-            'end_date' => $endDate->format('Y-m-d')
+            'end_date'   => $endDate->format('Y-m-d'),
         ]);
 
         $reports = [];
@@ -129,16 +217,6 @@ class ReportRepository
         }
 
         return $reports;
-    }
-
-    public function countAll(): int
-    {
-        $stmt = $this->pdo->query("
-            SELECT COUNT(*)
-            FROM reports
-        ");
-
-        return (int) $stmt->fetchColumn();
     }
 
     public function update(Report $report): bool

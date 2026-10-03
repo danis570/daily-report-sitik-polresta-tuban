@@ -1,62 +1,69 @@
-<!-- FOOTER -->
-<footer class="bg-black text-white pt-20 pb-10 border-t-8 border-primary">
-    <div
-        class="max-w-7xl mx-auto px-4 pt-8 border-t-4 border-white/90 flex flex-col md:flex-row justify-between items-center">
-        <p class="font-bold text-white-400">© 2026 Teknik Informatika UNIROW Tuban.</p>
-    </div>
-</footer>
+        </div><!-- /.flex-1 -->
 
+        <!-- FOOTER -->
+        <footer class="bg-black text-white py-6 border-t-4 border-primary">
+            <div class="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row justify-between items-center gap-2">
+                <p class="font-bold text-sm">© 2026 Teknik Informatika UNIROW Tuban.</p>
+                <p class="text-xs text-gray-400 font-bold">SITIK Polresta Tuban</p>
+            </div>
+        </footer>
+    </main>
 
-<!-- Scripts -->
-<script>
-    // Initialize Lucide Icons
-    lucide.createIcons();
+    <!-- ============================================ -->
+    <!-- SCRIPT: dipasang SETELAH semua elemen ada    -->
+    <!-- ============================================ -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // ---- Icons ----
+            if (window.lucide) lucide.createIcons();
 
-    // Dark Mode Logic
-    const themeToggleBtn = document.getElementById('theme-toggle');
-    const themeToggleMobile = document.getElementById('theme-toggle-mobile');
+            // ---- Dark Mode ----
+            const themeToggle = document.getElementById('theme-toggle');
+            if (themeToggle) {
+                themeToggle.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const isDark = document.documentElement.classList.toggle('dark');
+                    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+                });
+            }
 
-    function toggleTheme() {
-        if (document.documentElement.classList.contains('dark')) {
-            document.documentElement.classList.remove('dark');
-            localStorage.setItem('theme', 'light');
-        } else {
-            document.documentElement.classList.add('dark');
-            localStorage.setItem('theme', 'dark');
-        }
-    }
+            // Init theme dari localStorage
+            const saved = localStorage.getItem('theme');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            if (saved === 'dark' || (!saved && prefersDark)) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
 
-    themeToggleBtn.addEventListener('click', toggleTheme);
-    themeToggleMobile.addEventListener('click', toggleTheme);
+            // ---- Sidebar Mobile ----
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            const openBtn = document.getElementById('sidebar-open');
+            const closeBtn = document.getElementById('sidebar-close');
 
-    // Check local storage on load
-    if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-        document.documentElement.classList.add('dark');
-    } else {
-        document.documentElement.classList.remove('dark');
-    }
+            function openSidebar() {
+                if (!sidebar) return;
+                sidebar.classList.remove('-translate-x-full');
+                overlay?.classList.remove('hidden');
+                document.body.style.overflow = 'hidden'; // cegah scroll di belakang
+            }
+            function closeSidebar() {
+                if (!sidebar) return;
+                sidebar.classList.add('-translate-x-full');
+                overlay?.classList.add('hidden');
+                document.body.style.overflow = '';
+            }
 
-    // Mobile Menu Logic
-    const mobileMenuBtn = document.getElementById('mobile-menu-btn');
-    const mobileMenu = document.getElementById('mobile-menu');
+            openBtn?.addEventListener('click', openSidebar);
+            closeBtn?.addEventListener('click', closeSidebar);
+            overlay?.addEventListener('click', closeSidebar);
 
-    mobileMenuBtn.addEventListener('click', () => {
-        mobileMenu.classList.toggle('hidden');
-        const icon = mobileMenu.classList.contains('hidden') ? 'menu' : 'x';
-        // Re-render icon (simplified for this context)
-        mobileMenuBtn.innerHTML = `<i data-lucide="${icon}" class="w-8 h-8"></i>`;
-        lucide.createIcons();
-    });
-
-    // Close mobile menu on link click
-    document.querySelectorAll('#mobile-menu a').forEach(link => {
-        link.addEventListener('click', () => {
-            mobileMenu.classList.add('hidden');
-            mobileMenuBtn.innerHTML = `<i data-lucide="menu" class="w-8 h-8"></i>`;
-            lucide.createIcons();
+            // Tutup sidebar saat resize ke desktop
+            window.addEventListener('resize', function () {
+                if (window.innerWidth >= 1024) closeSidebar();
+            });
         });
-    });
-</script>
+    </script>
 </body>
-
-</html>
+</html> 
