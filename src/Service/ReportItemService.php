@@ -29,49 +29,63 @@ class ReportItemService
      */
     public function create(UserAddReportItemRequest $request): UserAddReportItemResponse
     {
-        // 1. Validasi Input Dasar
+        // 1. Validasi input dasar
         $this->createValidation($request);
 
-        // 2. Hitung item_no otomatis untuk laporan bersangkutan
-        $currentCount = $this->reportItemRepository->countByReportId($request->reportId);
-        $nextItemNo = $currentCount + 1;
-
+        // 2. Gunakan itemNo dari request (manual dari user)
         $reportItem = new ReportItem();
         $reportItem->reportId = $request->reportId;
-        $reportItem->itemNo = $nextItemNo;
+        $reportItem->itemNo = (int) $request->itemNo;   // ← dari user
         $reportItem->targetOptionId = $request->targetOptionId;
         $reportItem->activityOptionId = $request->activityOptionId;
         $reportItem->personnelStrengthOptionId = $request->personnelStrengthOptionId;
         $reportItem->locationOptionId = $request->locationOptionId;
         $reportItem->personInChargeOptionId = $request->personInChargeOptionId;
         $reportItem->expectedResultOptionId = $request->expectedResultOptionId;
-        $reportItem->remarks = trim($request->remarks);
+        $reportItem->remarks = trim($request->remarks ?? '');
 
-        // 4. Simpan ke database melalui Repository
+        // 3. Simpan ke database
         $savedItem = $this->reportItemRepository->save($reportItem);
 
-        // 5. Kembalikan Response DTO
+        // 4. Kembalikan Response DTO
         $response = new UserAddReportItemResponse();
         $response->reportItem = $savedItem;
 
         return $response;
     }
 
-    /**
-     * @param UserAddReportItemRequest $request
-     * @return void
-     * @throws Exception
-     */
     private function createValidation(UserAddReportItemRequest $request): void
     {
         if ($request->reportId === null) {
             throw new Exception("Laporan induk tidak valid.");
         }
 
-        // Pastikan laporan induk benar-benar ada di database
+        // Pastikan laporan induk ada
         $report = $this->reportRepository->findById($request->reportId);
         if ($report === null) {
             throw new Exception("Laporan utama tidak ditemukan.");
+        }
+
+        // ✅ Validasi itemNo
+        if ($request->itemNo === null || $request->itemNo === '') {
+            throw new Exception("Nomor giat wajib diisi.");
+        }
+
+        if ((int) $request->itemNo < 1) {
+            throw new Exception("Nomor giat minimal 1.");
+        }
+
+        // ✅ Cek duplikat nomor di laporan yang sama
+        $existingItems = $this->reportItemRepository
+            ->findByReportId((int) $request->reportId);
+
+        foreach ($existingItems as $existing) {
+            if ((int) $existing->itemNo === (int) $request->itemNo) {
+                throw new Exception(
+                    "Nomor giat #" . $request->itemNo . " sudah dipakai. " .
+                    "Silakan pilih nomor lain."
+                );
+            }
         }
 
         // Validasi semua opsi wajib diisi
@@ -89,32 +103,83 @@ class ReportItemService
             throw new Exception("Hasil yang Diharapkan wajib dipilih.");
     }
 
-      public function update(UserUpdateReportItemRequest $request): UserUpdateReportItemResponse
-    {
-        // 1. Jalankan fungsi validasi khusus untuk update
-        $this->updateValidation($request);
+    public function update(UserUpdateReportItemRequest $request): UserUpdateReportItemResponse
+{
+    // 1. Validasi
+    $this->updateValidation($request);
 
-        // 2. Ambil data asli entitas domain dari database
-        $reportItem = $this->reportItemRepository->findById($request->id);
+    // 2. Ambil data asli
+    $reportItem = $this->reportItemRepository->findById($request->id);
 
-        // 3. Petakan perubahan data baru (Nilai reportId dan itemNo TIDAK BOLEH diubah)
-        $reportItem->targetOptionId = $request->targetOptionId;
-        $reportItem->activityOptionId = $request->activityOptionId;
-        $reportItem->personnelStrengthOptionId = $request->personnelStrengthOptionId;
-        $reportItem->locationOptionId = $request->locationOptionId;
-        $reportItem->personInChargeOptionId = $request->personInChargeOptionId;
-        $reportItem->expectedResultOptionId = $request->expectedResultOptionId;
-        $reportItem->remarks = trim($request->remarks);
+    // 3. Update semua field (termasuk itemNo, reportId tetap)
+    $reportItem->itemNo                    = (int) $request->itemNo;   // ← DIIZINKAN UBAH
+    $reportItem->targetOptionId            = $request->targetOptionId;
+    $reportItem->activityOptionId          = $request->activityOptionId;
+    $reportItem->personnelStrengthOptionId = $request->personnelStrengthOptionId;
+    $reportItem->locationOptionId          = $request->locationOptionId;
+    $reportItem->personInChargeOptionId    = $request->personInChargeOptionId;
+    $reportItem->expectedResultOptionId    = $request->expectedResultOptionId;
+    $reportItem->remarks                   = trim($request->remarks ?? '');
 
-        // 4. Perbarui ke database via repository
-        $this->reportItemRepository->update($reportItem);
+    // 4. Simpan ke database
+    $this->reportItemRepository->update($reportItem);
 
-        // 5. Kembalikan Response DTO
-        $response = new UserUpdateReportItemResponse();
-        $response->reportItem = $reportItem;
+    // 5. Response
+    $response = new UserUpdateReportItemResponse();
+    $response->reportItem = $reportItem;
 
-        return $response;
+    return $response;
+}
+
+    private function updateValidation(UserUpdateReportItemRequest $request): void
+{
+    if ($request->id === null) {
+        throw new Exception("ID rincian kegiatan tidak valid.");
     }
+
+    // Cek item ada
+    $currentItem = $this->reportItemRepository->findById($request->id);
+    if ($currentItem === null) {
+        throw new Exception("Rincian kegiatan laporan tidak ditemukan.");
+    }
+
+    // ✅ Validasi itemNo
+    if ($request->itemNo === null || $request->itemNo === '') {
+        throw new Exception("Nomor giat wajib diisi.");
+    }
+
+    if ((int) $request->itemNo < 1) {
+        throw new Exception("Nomor giat minimal 1.");
+    }
+
+    // ✅ Cek duplikat nomor di laporan yang sama (kecuali dirinya sendiri)
+    $existingItems = $this->reportItemRepository
+        ->findByReportId($currentItem->reportId);
+
+    foreach ($existingItems as $other) {
+        if ((int) $other->id !== (int) $request->id
+            && (int) $other->itemNo === (int) $request->itemNo) {
+            throw new Exception(
+                "Nomor giat #" . $request->itemNo . " sudah dipakai oleh item lain. " .
+                "Silakan pilih nomor lain."
+            );
+        }
+    }
+
+    // Validasi opsi wajib
+    if (empty($request->targetOptionId))
+        throw new Exception("Sasaran/Target wajib dipilih.");
+    if (empty($request->activityOptionId))
+        throw new Exception("Jenis Kegiatan wajib dipilih.");
+    if (empty($request->personnelStrengthOptionId))
+        throw new Exception("Kuat Personel wajib dipilih.");
+    if (empty($request->locationOptionId))
+        throw new Exception("Lokasi Giat wajib dipilih.");
+    if (empty($request->personInChargeOptionId))
+        throw new Exception("Perwira Penanggung Jawab wajib dipilih.");
+    if (empty($request->expectedResultOptionId))
+        throw new Exception("Hasil yang Diharapkan wajib dipilih.");
+}
 
     public function delete(int $id): void
     {
@@ -127,24 +192,5 @@ class ReportItemService
         $this->reportItemRepository->deleteById($id);
     }
 
-    private function updateValidation(UserUpdateReportItemRequest $request): void
-    {
-        if ($request->id === null) {
-            throw new Exception("ID rincian kegiatan tidak valid.");
-        }
-
-        // Ambil entitas asli untuk memastikan keberadaannya
-        $currentItem = $this->reportItemRepository->findById($request->id);
-        if ($currentItem === null) {
-            throw new Exception("Rincian kegiatan laporan tidak ditemukan.");
-        }
-
-        // Validasi seluruh input pilihan wajib terisi
-        if (empty($request->targetOptionId)) throw new Exception("Sasaran/Target wajib dipilih.");
-        if (empty($request->activityOptionId)) throw new Exception("Jenis Kegiatan wajib dipilih.");
-        if (empty($request->personnelStrengthOptionId)) throw new Exception("Kuat Personel wajib dipilih.");
-        if (empty($request->locationOptionId)) throw new Exception("Lokasi Giat wajib dipilih.");
-        if (empty($request->personInChargeOptionId)) throw new Exception("Perwira Penanggung Jawab wajib dipilih.");
-        if (empty($request->expectedResultOptionId)) throw new Exception("Hasil yang Diharapkan wajib dipilih.");
-    }
+    
 }

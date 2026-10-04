@@ -22,42 +22,79 @@
         </div>
 
         <!-- Global Flash Message -->
+        <!-- ============================== -->
+        <!-- Global Flash Message -->
+        <!-- ============================== -->
         <?php
         use Unirow2026\DailyReportSitikPolrestaTuban\App\View;
-        if (!empty($_SESSION['flash_message'])): ?>
-            <!-- Flash Message -->
-            <div class="mb-8 bg-[#00d982] border-4 border-[#121212]
-                shadow-[6px_6px_0_0_#121212] flex items-start gap-4
-                p-5 transition-all duration-200" role="alert" id="flash-message">
 
-                <div class="flex-shrink-0 w-9 h-9 flex items-center justify-center
-                    bg-[#121212] border-2 border-[#121212]">
-                    <svg class="w-5 h-5 text-[#00d982]" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd"
-                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                            clip-rule="evenodd" />
-                    </svg>
+        if (!empty($_SESSION['flash_message'])):
+
+            $flashType = $_SESSION['flash_type'] ?? 'success';
+            $isError = $flashType === 'error';
+            ?>
+
+            <div id="flash-message" class="mb-6 p-4
+               <?= $isError
+                   ? 'bg-red-500 text-white'
+                   : 'bg-[#00d982] text-black' ?>
+               border-4 border-black dark:border-white
+               shadow-[6px_6px_0_0_#000] dark:shadow-[6px_6px_0_0_#00d982]
+               flex items-start gap-4
+               transition-all duration-200" role="alert">
+
+                <!-- Icon -->
+                <div class="w-9 h-9 flex-shrink-0
+                    flex items-center justify-center
+                    border-2 border-black
+                    <?= $isError
+                        ? 'bg-white text-red-500'
+                        : 'bg-black text-[#00d982]' ?>">
+
+                    <?php if ($isError): ?>
+                        <!-- Icon error (silang) -->
+                        <svg class="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd"
+                                d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                                clip-rule="evenodd" />
+                        </svg>
+                    <?php else: ?>
+                        <!-- Icon sukses (centang) -->
+                        <svg class="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd"
+                                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                clip-rule="evenodd" />
+                        </svg>
+                    <?php endif; ?>
                 </div>
 
+                <!-- Text -->
                 <div class="flex-1 min-w-0">
-                    <p class="font-black uppercase text-sm text-[#121212]">Berhasil</p>
-                    <p class="mt-1 font-bold text-sm text-[#121212] break-words">
+                    <p class="font-black uppercase text-sm">
+                        <?= $isError ? 'Gagal' : 'Berhasil' ?>
+                    </p>
+                    <p class="mt-1 font-bold text-sm break-words">
                         <?= htmlspecialchars($_SESSION['flash_message']) ?>
                     </p>
                 </div>
 
-                <!-- Tombol Close -->
-                <button type="button" id="flash-close" class="flex-shrink-0 w-8 h-8 flex items-center justify-center
-                   bg-[#121212] text-[#00d982] border-2 border-[#121212]
-                   hover:bg-white hover:text-[#121212] transition-colors
-                   cursor-pointer" aria-label="Tutup notifikasi">
+                <!-- Close -->
+                <button type="button" id="flash-close" class="shrink-0 w-8 h-8 flex items-center justify-center
+                   border-2 border-black
+                   <?= $isError
+                       ? 'bg-white text-red-500 hover:bg-black hover:text-white'
+                       : 'bg-black text-[#00d982] hover:bg-white hover:text-black' ?>
+                   transition-colors cursor-pointer" aria-label="Tutup notifikasi">
                     <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
                         stroke-linecap="round" stroke-linejoin="round">
                         <path d="M6 6l12 12M6 18L18 6" />
                     </svg>
                 </button>
+
             </div>
+
             <?php View::clearFlashMessage(); ?>
+
         <?php endif; ?>
 
 
@@ -347,6 +384,20 @@
                                             Edit
                                         </a>
 
+                                        <!-- Duplikat (BARU) -->
+                                        <button type="button" class="duplicate-btn flex-1 sm:flex-none px-3 py-1.5
+                                            bg-blue-500 text-white
+                                            border-2 border-black
+                                            font-black uppercase text-xs
+                                            shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]
+                                            hover:translate-x-[1px] hover:translate-y-[1px]
+                                            hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]
+                                            transition-all cursor-pointer"
+                                            data-report-id="<?= (int) $item['report']->id ?>"
+                                            data-report-date="<?= htmlspecialchars($item['formattedDate']) ?>">
+                                            Duplikat
+                                        </button>
+
                                         <a href="/report/print/pdf/<?= $item['report']->reportDate->format('Y-m-d') ?>"
                                             target="_blank"
                                             class="flex-1 sm:flex-none text-center px-3 py-1.5 bg-[#00d982] text-black border-2 border-black font-black uppercase text-xs shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] transition-all">
@@ -377,7 +428,7 @@
                                         shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]
                                         hover:translate-x-0.5 hover:-translate-y-0.5 transition-transform">
 
-                                        <span>Lihat Kegiatan</span>
+                                        <span>Manajemen Kegiatan</span>
 
                                         <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3"
@@ -543,6 +594,105 @@
                 Ya, Hapus
             </button>
         </div>
+
+    </div>
+</div>
+
+<!-- ============================== -->
+<!-- MODAL DUPLIKAT LAPORAN -->
+<!-- ============================== -->
+<div id="duplicate-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4
+           bg-black/70 backdrop-blur-sm">
+
+    <div id="duplicate-modal-content" class="w-full max-w-md
+               bg-white dark:bg-[#181818]
+               border-4 border-[#121212] dark:border-white
+               shadow-[8px_8px_0_0_#121212] dark:shadow-[8px_8px_0_0_#00d982]
+               transform scale-95 transition-transform duration-200">
+
+        <!-- Header -->
+        <div class="flex items-center gap-3 p-5
+                    border-b-4 border-[#121212] dark:border-white">
+            <div class="w-10 h-10 flex items-center justify-center
+                        bg-blue-500 border-2 border-[#121212]">
+                <svg class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
+                    <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+                </svg>
+            </div>
+            <h3 class="font-black uppercase text-lg
+                       text-[#121212] dark:text-white">
+                Duplikat Laporan
+            </h3>
+        </div>
+
+        <!-- Form -->
+        <form action="" method="POST" id="duplicate-form">
+            <!-- Action URL di-set via JS -->
+
+            <div class="p-5 space-y-4">
+                <p class="text-sm font-bold text-[#121212] dark:text-white">
+                    Duplikat laporan dari:
+                </p>
+
+                <p id="duplicate-source-date" class="px-3 py-2
+                           bg-gray-100 dark:bg-[#222]
+                           border-2 border-[#121212] dark:border-white
+                           font-black text-sm
+                           text-[#121212] dark:text-white">
+                    -
+                </p>
+
+                <div>
+                    <label for="target-date" class="block mb-2 text-xs font-black uppercase
+                               text-[#121212] dark:text-white">
+                        Tanggal Target <span class="text-red-500">*</span>
+                    </label>
+
+                    <input type="date" id="target-date" name="target_date" required class="w-full px-4 py-3
+                               bg-white dark:bg-[#222]
+                               text-[#121212] dark:text-white
+                               border-4 border-[#121212] dark:border-white
+                               font-bold
+                               outline-none
+                               focus:ring-4 focus:ring-[#00d982]">
+
+                    <p class="mt-2 text-xs font-bold
+                              text-gray-500 dark:text-gray-400">
+                        Tanggal ini harus belum punya laporan. Semua kegiatan akan disalin.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="flex gap-3 p-5
+                        border-t-4 border-[#121212] dark:border-white">
+
+                <button type="button" id="duplicate-cancel" class="flex-1 px-4 py-3
+                           bg-gray-200 dark:bg-[#222]
+                           text-[#121212] dark:text-white
+                           border-4 border-[#121212] dark:border-white
+                           font-black uppercase text-sm
+                           shadow-[4px_4px_0_0_#121212] dark:shadow-[4px_4px_0_0_#00d982]
+                           hover:shadow-none hover:translate-x-[4px] hover:translate-y-[4px]
+                           transition-all cursor-pointer">
+                    Batal
+                </button>
+
+                <button type="submit" class="flex-1 px-4 py-3
+                           bg-blue-500 text-white
+                           border-4 border-[#121212]
+                           font-black uppercase text-sm
+                           shadow-[4px_4px_0_0_#121212]
+                           hover:shadow-none hover:translate-x-[4px] hover:translate-y-[4px]
+                           transition-all cursor-pointer">
+                    Duplikat
+                </button>
+
+            </div>
+
+        </form>
 
     </div>
 </div>
@@ -860,5 +1010,76 @@
 
         // Init: cek state saat halaman load (mis. setelah reload dengan filter)
         updateSubmitState();
+    })();
+
+    /* ==========================================================
+ * MODAL DUPLIKAT LAPORAN
+ * ========================================================== */
+    (() => {
+        const modal = document.getElementById('duplicate-modal');
+        const modalContent = document.getElementById('duplicate-modal-content');
+        const form = document.getElementById('duplicate-form');
+        const sourceDate = document.getElementById('duplicate-source-date');
+        const targetDateInput = document.getElementById('target-date');
+        const btnCancel = document.getElementById('duplicate-cancel');
+
+        if (!modal || !form) return;
+
+        function openModal(reportId, reportDate) {
+            // Set form action
+            form.action = '/report/duplicate/' + reportId;
+
+            // Set source date (read-only label)
+            sourceDate.textContent = reportDate;
+
+            // Reset target date
+            targetDateInput.value = '';
+
+            // Tampilkan modal
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+
+            requestAnimationFrame(() => {
+                modalContent.classList.remove('scale-95');
+                modalContent.classList.add('scale-100');
+            });
+
+            // Auto-focus ke input tanggal
+            setTimeout(() => targetDateInput.focus(), 100);
+        }
+
+        function closeModal() {
+            modalContent.classList.remove('scale-100');
+            modalContent.classList.add('scale-95');
+            document.body.style.overflow = '';
+
+            setTimeout(() => modal.classList.add('hidden'), 150);
+        }
+
+        // Buka modal saat tombol duplikat diklik
+        document.querySelectorAll('.duplicate-btn').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const reportId = this.dataset.reportId;
+                const reportDate = this.dataset.reportDate;
+
+                openModal(reportId, reportDate);
+            });
+        });
+
+        // Batal
+        btnCancel.addEventListener('click', closeModal);
+
+        // Klik backdrop → tutup
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeModal();
+        });
+
+        // ESC → tutup
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
+                closeModal();
+            }
+        });
+
     })();
 </script>

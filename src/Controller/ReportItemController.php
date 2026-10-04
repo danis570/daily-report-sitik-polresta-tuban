@@ -45,27 +45,30 @@ class ReportItemController extends BaseController
             View::redirect('/reports');
         }
 
-        // 1. Validasi induk: Ambil data report berdasarkan tanggal URL
         $report = $this->reportRepository->findByDate($reportDate);
         if ($report === null) {
             View::redirect('/reports');
         }
 
-        // 2. Ambil semua opsi pilihan laporan untuk diisi oleh user di Form
         $options = $this->reportOptionRepository->findAll();
-
-        // REVISI: Ubah objek reportDate menjadi format teks Indonesia (contoh: Kamis, 01 Oktober 2026)
-        // panggil fungsi helper manual yang sudah Anda miliki di dalam Controller ini
         $formattedDate = $this->formatTanggalIndo($report->reportDate);
 
-        // 3. Render ke halaman pengisian item laporan
+        // ✅ Hitung nomor berikutnya (default isian form)
+        $existingItems = $this->reportItemRepository->findByReportId($report->id);
+        $nextItemNo = 1;
+        if (!empty($existingItems)) {
+            $maxNo = max(array_map(fn($i) => (int) $i->itemNo, $existingItems));
+            $nextItemNo = $maxNo + 1;
+        }
+
         View::render('User', 'User/Report/report-item-add', [
             'title' => 'Input Kegiatan Laporan — ' . $date,
             'current' => 'report',
             'report' => $report,
             'date' => $date,
             'formattedDate' => $formattedDate,
-            'options' => $options
+            'options' => $options,
+            'nextItemNo' => $nextItemNo,   // ← tambahan
         ]);
     }
 
@@ -84,6 +87,7 @@ class ReportItemController extends BaseController
 
         $request = new UserAddReportItemRequest();
         $request->reportId = $report->id;
+        $request->itemNo = isset($_POST['item_no']) ? (int) $_POST['item_no'] : null;   // ← tambahan
         $request->targetOptionId = isset($_POST['target_option_id']) ? (int) $_POST['target_option_id'] : null;
         $request->activityOptionId = isset($_POST['activity_option_id']) ? (int) $_POST['activity_option_id'] : null;
         $request->personnelStrengthOptionId = isset($_POST['personnel_strength_option_id']) ? (int) $_POST['personnel_strength_option_id'] : null;
@@ -93,18 +97,23 @@ class ReportItemController extends BaseController
         $request->remarks = $_POST['remarks'] ?? null;
 
         try {
-            // 3. Eksekusi penyimpanan dan biarkan Service menghitung item_no secara otomatis
             $this->reportItemService->create($request);
 
-            // 4. Sukses: Set flash message dan alihkan ke halaman detail tanggal laporan tersebut
             View::flashMessage("Item kegiatan baru berhasil ditambahkan!");
             header("Location: /report/" . $date);
             exit();
 
         } catch (Exception $exception) {
-            // 5. Gagal: Tampilkan kembali formulir dengan pesan kesalahan dari layer Service
             $options = $this->reportOptionRepository->findAll();
             $formattedDate = $this->formatTanggalIndo($report->reportDate);
+
+            // Hitung ulang nomor berikutnya untuk default form
+            $existingItems = $this->reportItemRepository->findByReportId($report->id);
+            $nextItemNo = 1;
+            if (!empty($existingItems)) {
+                $maxNo = max(array_map(fn($i) => (int) $i->itemNo, $existingItems));
+                $nextItemNo = $maxNo + 1;
+            }
 
             View::render('User', 'User/Report/report-item-add', [
                 'title' => 'Input Kegiatan Laporan — ' . $date,
@@ -113,7 +122,8 @@ class ReportItemController extends BaseController
                 'report' => $report,
                 'date' => $date,
                 'formattedDate' => $formattedDate,
-                'options' => $options
+                'options' => $options,
+                'nextItemNo' => $nextItemNo,
             ]);
         }
     }
@@ -167,6 +177,7 @@ class ReportItemController extends BaseController
         // 1. Siapkan DTO Request Update
         $request = new \Unirow2026\DailyReportSitikPolrestaTuban\Model\Report\UserUpdateReportItemRequest();
         $request->id = $id;
+        $request->itemNo = isset($_POST['item_no']) ? (int) $_POST['item_no'] : null;   // ← TAMBAHAN
         $request->targetOptionId = isset($_POST['target_option_id']) ? (int) $_POST['target_option_id'] : null;
         $request->activityOptionId = isset($_POST['activity_option_id']) ? (int) $_POST['activity_option_id'] : null;
         $request->personnelStrengthOptionId = isset($_POST['personnel_strength_option_id']) ? (int) $_POST['personnel_strength_option_id'] : null;
@@ -176,16 +187,16 @@ class ReportItemController extends BaseController
         $request->remarks = $_POST['remarks'] ?? null;
 
         try {
-            // 2. Eksekusi pembaruan data di Layer Service
+            // 2. Eksekusi pembaruan di Layer Service
             $this->reportItemService->update($request);
 
-            // 3. Sukses: Set flash message dan alihkan kembali ke detail laporan tanggal tersebut
+            // 3. Sukses: Set flash message dan alihkan kembali ke detail laporan
             View::flashMessage("Item kegiatan berhasil diperbarui!");
             header("Location: /report/" . $date);
             exit();
 
         } catch (Exception $exception) {
-            // 4. Gagal: Tampilkan kembali formulir edit dengan membawa pesan error
+            // 4. Gagal: Tampilkan kembali formulir edit dengan pesan error
             $options = $this->reportOptionRepository->findAll();
             $formattedDate = $this->formatTanggalIndo($report->reportDate);
 
@@ -197,7 +208,7 @@ class ReportItemController extends BaseController
                 'report' => $report,
                 'date' => $date,
                 'formattedDate' => $formattedDate,
-                'options' => $options
+                'options' => $options,
             ]);
         }
     }

@@ -87,7 +87,7 @@
                         <!-- Current Page -->
                         <li>
                             <span aria-current="page" class="text-black dark:text-white">
-                                <?= htmlspecialchars($formattedDate) ?> · Detail
+                                <?= htmlspecialchars($formattedDate) ?> · Detail Giat
                             </span>
                         </li>
 
@@ -205,8 +205,8 @@
                                         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                                             <div>
                                                 <p class="font-black text-black dark:text-white uppercase tracking-wide">
-                                                    Giat #<?= htmlspecialchars($data['item']->itemNo ?? '-') ?> :
-                                                    <?= htmlspecialchars($data['activityName']) ?>
+                                                    Sasaran #<?= htmlspecialchars($data['item']->itemNo ?? '-') ?> :
+                                                    <?= htmlspecialchars($data['targetName']) ?>
                                                 </p>
                                             </div>
 
@@ -238,10 +238,10 @@
                                         <div
                                             class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm border-2 border-black p-4 bg-gray-50 dark:bg-[#222]">
                                             <div>
-                                                <span class="block text-xs font-bold text-gray-400 uppercase">Sasaran /
-                                                    Target:</span>
+                                                <span class="block text-xs font-bold text-gray-400 uppercase">
+                                                    Kegiatan:</span>
                                                 <span
-                                                    class="font-bold text-black dark:text-white"><?= htmlspecialchars($data['targetName']) ?></span>
+                                                    class="font-bold text-black dark:text-white"><?= htmlspecialchars($data['activityName']) ?></span>
                                             </div>
                                             <div>
                                                 <span class="block text-xs font-bold text-gray-400 uppercase">Lokasi Giat:</span>

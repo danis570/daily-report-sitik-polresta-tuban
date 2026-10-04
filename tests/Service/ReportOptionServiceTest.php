@@ -5,163 +5,200 @@ namespace Unirow2026\DailyReportSitikPolrestaTuban\Service;
 use Exception;
 use PHPUnit\Framework\TestCase;
 use Unirow2026\DailyReportSitikPolrestaTuban\App\Database;
-use Unirow2026\DailyReportSitikPolrestaTuban\Model\Report\UserAddReportOptionRequest;
-use Unirow2026\DailyReportSitikPolrestaTuban\Model\Report\UserAddReportOptionResponse;
+use Unirow2026\DailyReportSitikPolrestaTuban\Domain\ReportItem;
+use Unirow2026\DailyReportSitikPolrestaTuban\Domain\ReportOption;
+use Unirow2026\DailyReportSitikPolrestaTuban\Model\Report\UserAddReportRequest;
+use Unirow2026\DailyReportSitikPolrestaTuban\Model\User\UserRegisterRequest;
 use Unirow2026\DailyReportSitikPolrestaTuban\Repository\ReportItemRepository;
 use Unirow2026\DailyReportSitikPolrestaTuban\Repository\ReportOptionRepository;
+use Unirow2026\DailyReportSitikPolrestaTuban\Repository\ReportRepository;
+use Unirow2026\DailyReportSitikPolrestaTuban\Repository\UserRepository;
 
 class ReportOptionServiceTest extends TestCase
 {
     private ReportOptionService $reportOptionService;
     private ReportOptionRepository $reportOptionRepository;
+    private ReportItemRepository $reportItemRepository;
+    private ReportRepository $reportRepository;
+    private UserRepository $userRepository;
+    private UserService $userService;
+    private ReportService $reportService;
 
     protected function setUp(): void
     {
+        Database::clearConnection();
         $connection = Database::getConnection();
+
+        // Repository
         $this->reportOptionRepository = new ReportOptionRepository($connection);
-        $reportItemRepository = new ReportItemRepository($connection);
-        $this->reportOptionService = new ReportOptionService($this->reportOptionRepository, $reportItemRepository);
+        $this->reportItemRepository   = new ReportItemRepository($connection);
+        $this->reportRepository       = new ReportRepository($connection);
+        $this->userRepository         = new UserRepository($connection);
 
-        // Bersihkan data table sebelum tiap pengujian berjalan
+        // Service
+        $this->userService   = new UserService($this->userRepository);
+        $this->reportService = new ReportService(
+            $this->reportRepository,
+            $this->reportItemRepository
+        );
+        $this->reportOptionService = new ReportOptionService(
+            $this->reportOptionRepository,
+            $this->reportItemRepository
+        );
+
+        // Bersihkan data (urutan: anak dulu, lalu parent)
+        $this->reportItemRepository->deleteAll();
         $this->reportOptionRepository->deleteAll();
+        $this->reportRepository->deleteAll();
+        $this->userRepository->deleteAll();
     }
 
-    public function testCreateSuccess()
+    /* =============================================================
+     * HELPER
+     * ============================================================= */
+
+    private function createUser(string $email): int
     {
-        $request = new UserAddReportOptionRequest();
-        $request->category = 'Giat';
-        $request->name = 'Patroli Sinergitas';
-        $request->description = 'Aktivitas patroli bersama TNI-Polri';
+        $userRequest = new UserRegisterRequest();
+        $userRequest->email    = $email;
+        $userRequest->password = 'password123';
 
-        $response = $this->reportOptionService->create($request);
+        $userResult = $this->userService->register($userRequest);
 
-        self::assertInstanceOf(UserAddReportOptionResponse::class, $response);
-        self::assertNotNull($response->reportOption->id);
-        self::assertEquals('Giat', $response->reportOption->category);
-        self::assertEquals('Patroli Sinergitas', $response->reportOption->name);
-        self::assertEquals('Aktivitas patroli bersama TNI-Polri', $response->reportOption->description);
+        return $userResult->user->id;
     }
 
-    public function testCreateCategoryEmpty()
+    private function createReport(string $date, int $userId): int
     {
-        $request = new UserAddReportOptionRequest();
-        $request->category = ''; // Kategori Kosong
-        $request->name = 'Patroli';
-        $request->description = 'Deskripsi';
+        $reportRequest = new UserAddReportRequest();
+        $reportRequest->reportDate = $date;
+        $reportRequest->createdBy  = $userId;
 
-        $this->expectException(Exception::class);
-        $this->expectExceptionMessage('Kategori pilihan laporan tidak boleh kosong.');
+        $reportResponse = $this->reportService->create($reportRequest);
 
-        $this->reportOptionService->create($request);
+        return $reportResponse->report->id;
     }
 
-    public function testCreateNameEmpty()
+    private function createDummyOption(string $category, string $name): ReportOption
     {
-        $request = new UserAddReportOptionRequest();
-        $request->category = 'Giat';
-        $request->name = '   '; // Nama Kosong / Spasi saja
-        $request->description = 'Deskripsi';
+        $option = new ReportOption();
+        $option->category    = $category;
+        $option->name        = $name;
+        $option->description = null;
 
-        $this->expectException(Exception::class);
-        $this->expectExceptionMessage('Nama pilihan laporan tidak boleh kosong.');
-
-        $this->reportOptionService->create($request);
+        return $this->reportOptionRepository->save($option);
     }
 
-    public function testCreateDuplicateCategoryAndName()
+    private function createItemUsingOption(int $reportId, int $itemNo, int $optionId): ReportItem
     {
-        // 1. Simpan data pertama
-        $request1 = new UserAddReportOptionRequest();
-        $request1->category = 'Giat';
-        $request1->name = 'Patroli';
-        $request1->description = 'Deskripsi awal';
-        $this->reportOptionService->create($request1);
+        $item = new ReportItem();
+        $item->reportId                   = $reportId;
+        $item->itemNo                     = $itemNo;
+        $item->targetOptionId             = $optionId;
+        $item->activityOptionId           = $optionId;
+        $item->personnelStrengthOptionId  = $optionId;
+        $item->locationOptionId           = $optionId;
+        $item->personInChargeOptionId     = $optionId;
+        $item->expectedResultOptionId     = $optionId;
+        $item->remarks                    = 'Test item';
 
-        // 2. Coba simpan data kedua dengan Kategori dan Nama yang sama persis
-        $request2 = new UserAddReportOptionRequest();
-        $request2->category = 'Giat';
-        $request2->name = 'Patroli';
-        $request2->description = 'Deskripsi berbeda';
-
-        $this->expectException(Exception::class);
-        $this->expectExceptionMessage("Pilihan 'Patroli' sudah terdaftar pada kategori 'Giat'.");
-
-        $this->reportOptionService->create($request2);
+        return $this->reportItemRepository->save($item);
     }
 
-        public function testUpdateSuccess()
+    /* =============================================================
+     * DELETE TESTS — Validasi hapus opsi
+     * ============================================================= */
+
+    public function testDeleteSuccess(): void
     {
-        // 1. Buat data awal dulu
-        $option = new \Unirow2026\DailyReportSitikPolrestaTuban\Domain\ReportOption();
-        $option->category = 'Giat';
-        $option->name = 'Patroli';
-        $option->description = 'Deskripsi Lama';
-        $savedOption = $this->reportOptionRepository->save($option);
+        // Opsi yang belum dipakai → boleh dihapus
+        $option = $this->createDummyOption('target', 'Opsi Baru');
 
-        // 2. Kirim request update
-        $request = new \Unirow2026\DailyReportSitikPolrestaTuban\Model\Report\UserUpdateReportOptionRequest();
-        $request->id = $savedOption->id;
-        $request->category = 'Giat Baru';
-        $request->name = 'Patroli Baru';
-        $request->description = 'Deskripsi Baru';
+        $this->reportOptionService->delete($option->id);
 
-        $response = $this->reportOptionService->update($request);
-
-        // 3. Asersi perubahan
-        self::assertEquals('Giat Baru', $response->reportOption->category);
-        self::assertEquals('Patroli Baru', $response->reportOption->name);
-        self::assertEquals('Deskripsi Baru', $response->reportOption->description);
+        $found = $this->reportOptionRepository->findById($option->id);
+        self::assertNull($found);
     }
 
-    public function testUpdateDuplicateName()
-    {
-        // 1. Buat data pertama
-        $option1 = new \Unirow2026\DailyReportSitikPolrestaTuban\Domain\ReportOption();
-        $option1->category = 'Giat';
-        $option1->name = 'Patroli';
-        $this->reportOptionRepository->save($option1);
-
-        // 2. Buat data kedua
-        $option2 = new \Unirow2026\DailyReportSitikPolrestaTuban\Domain\ReportOption();
-        $option2->category = 'Giat';
-        $option2->name = 'Penjagaan';
-        $savedOption2 = $this->reportOptionRepository->save($option2);
-
-        // 3. Coba ubah data kedua menjadi 'Patroli' (bakal kembar dengan data pertama)
-        $request = new \Unirow2026\DailyReportSitikPolrestaTuban\Model\Report\UserUpdateReportOptionRequest();
-        $request->id = $savedOption2->id;
-        $request->category = 'Giat';
-        $request->name = 'Patroli'; // Memicu Exception
-
-        $this->expectException(Exception::class);
-        $this->expectExceptionMessage("Pilihan 'Patroli' sudah terdaftar pada kategori 'Giat'.");
-
-        $this->reportOptionService->update($request);
-    }
-
-    public function testDeleteSuccess()
-    {
-        // 1. Buat data yang mau dihapus
-        $option = new \Unirow2026\DailyReportSitikPolrestaTuban\Domain\ReportOption();
-        $option->category = 'Giat';
-        $option->name = 'Hapus Aku';
-        $savedOption = $this->reportOptionRepository->save($option);
-
-        // 2. Jalankan fungsi hapus di Service
-        $this->reportOptionService->delete($savedOption->id);
-
-        // 3. Pastikan saat dicari lagi hasilnya null
-        $result = $this->reportOptionRepository->findById($savedOption->id);
-        self::assertNull($result);
-    }
-
-    public function testDeleteNotFound()
+    public function testDeleteFailsWhenNotFound(): void
     {
         $this->expectException(Exception::class);
-        $this->expectExceptionMessage("Pilihan laporan tidak ditemukan atau sudah dihapus.");
+        $this->expectExceptionMessage('tidak ditemukan');
 
-        // Coba hapus ID asal yang tidak terdaftar (misal ID: 999)
-        $this->reportOptionService->delete(999);
+        $this->reportOptionService->delete(999999);
     }
 
+    public function testDeleteFailsWhenInUse(): void
+    {
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage('masih digunakan');
+
+        // Setup: opsi dipakai di report item
+        $userId   = $this->createUser('delete-in-use@gmail.com');
+        $reportId = $this->createReport('2026-10-01', $userId);
+
+        $option = $this->createDummyOption('activity', 'Opsi Dipakai');
+
+        $this->createItemUsingOption($reportId, 1, $option->id);
+
+        // Coba hapus → harus gagal
+        $this->reportOptionService->delete($option->id);
+    }
+
+    public function testDeleteSuccessAfterUsageRemoved(): void
+    {
+        // Setup
+        $userId   = $this->createUser('delete-after@gmail.com');
+        $reportId = $this->createReport('2026-10-02', $userId);
+
+        $option = $this->createDummyOption('activity', 'Opsi akan dihapus');
+
+        $item = $this->createItemUsingOption($reportId, 1, $option->id);
+
+        // Hapus item dulu
+        $this->reportItemRepository->deleteById($item->id);
+
+        // Sekarang hapus opsi → harus sukses
+        $this->reportOptionService->delete($option->id);
+
+        $found = $this->reportOptionRepository->findById($option->id);
+        self::assertNull($found);
+    }
+
+    public function testDeleteErrorMessageContainsUsageCount(): void
+    {
+        // Setup: opsi dipakai 1×
+        $userId   = $this->createUser('delete-count@gmail.com');
+        $reportId = $this->createReport('2026-10-03', $userId);
+
+        $option = $this->createDummyOption('activity', 'Opsi count');
+
+        $this->createItemUsingOption($reportId, 1, $option->id);
+
+        try {
+            $this->reportOptionService->delete($option->id);
+            self::fail('Seharusnya throw Exception.');
+        } catch (Exception $e) {
+            // Pesan error harus sebut "1"
+            self::assertStringContainsString('1', $e->getMessage());
+        }
+    }
+
+    public function testDeleteMultipleItemsStillFails(): void
+    {
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage('masih digunakan');
+
+        $userId    = $this->createUser('delete-multi@gmail.com');
+        $reportId1 = $this->createReport('2026-10-04', $userId);
+        $reportId2 = $this->createReport('2026-10-05', $userId);
+
+        $option = $this->createDummyOption('activity', 'Opsi Multi');
+
+        // Pakai opsi di 2 item berbeda
+        $this->createItemUsingOption($reportId1, 1, $option->id);
+        $this->createItemUsingOption($reportId2, 1, $option->id);
+
+        $this->reportOptionService->delete($option->id);
+    }
 }

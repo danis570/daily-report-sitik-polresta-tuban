@@ -9,15 +9,18 @@ use Unirow2026\DailyReportSitikPolrestaTuban\Model\Report\UserAddReportRequest;
 use Unirow2026\DailyReportSitikPolrestaTuban\Model\Report\UserAddReportResponse;
 use Unirow2026\DailyReportSitikPolrestaTuban\Model\Report\UserUpdateReportRequest;
 use Unirow2026\DailyReportSitikPolrestaTuban\Model\Report\UserUpdateReportResponse;
+use Unirow2026\DailyReportSitikPolrestaTuban\Repository\ReportItemRepository;
 use Unirow2026\DailyReportSitikPolrestaTuban\Repository\ReportRepository;
 
 class ReportService
 {
     private ReportRepository $reportRepository;
+    private ReportItemRepository $reportItemRepository;
 
-    public function __construct(ReportRepository $reportRepository)
+    public function __construct(ReportRepository $reportRepository, ReportItemRepository $reportItemRepository)
     {
         $this->reportRepository = $reportRepository;
+        $this->reportItemRepository = $reportItemRepository;
     }
 
     public function create(UserAddReportRequest $request): UserAddReportResponse
@@ -60,7 +63,7 @@ class ReportService
         return $reportDate;
     }
 
-      public function update(UserUpdateReportRequest $request): UserUpdateReportResponse
+    public function update(UserUpdateReportRequest $request): UserUpdateReportResponse
     {
         // 1. Eksekusi validasi input dan aturan bisnis kembar
         $reportDate = $this->updateValidation($request);
@@ -128,6 +131,42 @@ class ReportService
         }
 
         return $reportDate;
+    }
+
+    public function duplicate(int $sourceReportId, string $targetDate, ?int $createdBy = null): Report
+    {
+        // 1. Cek report sumber ada
+        $sourceReport = $this->reportRepository->findById($sourceReportId);
+        if ($sourceReport === null) {
+            throw new Exception("Laporan sumber tidak ditemukan.");
+        }
+
+        // 2. Validasi tanggal target
+        try {
+            $target = new DateTimeImmutable($targetDate);
+        } catch (Exception $e) {
+            throw new Exception("Format tanggal tidak valid.");
+        }
+
+        // 3. Cek tanggal belum dipakai
+        $existing = $this->reportRepository->findByDate($target);
+        if ($existing !== null) {
+            throw new Exception(
+                "Tanggal " . $target->format('d-m-Y') . " sudah dipakai. Pilih tanggal lain."
+            );
+        }
+
+        // 4. Buat Report baru
+        $newReport = new Report();
+        $newReport->reportDate = $target;
+        $newReport->createdBy = $createdBy ?? $sourceReport->createdBy;   // ← pakai user yang request
+
+        $saved = $this->reportRepository->save($newReport);
+
+        // 5. Copy semua item
+        $this->reportItemRepository->copyItemsToReport($sourceReportId, $saved->id);
+
+        return $saved;
     }
 
 }

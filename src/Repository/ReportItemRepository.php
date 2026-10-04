@@ -108,6 +108,16 @@ class ReportItemRepository
         return (int) $stmt->fetchColumn();
     }
 
+    public function countAll(): int
+    {
+        $stmt = $this->pdo->query("
+        SELECT COUNT(*)
+        FROM report_items
+    ");
+
+        return (int) $stmt->fetchColumn();
+    }
+
     public function update(ReportItem $reportItem): bool
     {
         $stmt = $this->pdo->prepare("
@@ -312,6 +322,45 @@ class ReportItemRepository
         }
 
         return $usage;
+    }
+
+    /**
+     * Salin semua item dari satu report ke report lain.
+     * Return jumlah item yang disalin.
+     */
+    public function copyItemsToReport(int $sourceReportId, int $targetReportId): int
+    {
+        $sourceItems = $this->findByReportId($sourceReportId);
+
+        if (empty($sourceItems)) {
+            return 0;
+        }
+
+        $count = 0;
+
+        foreach ($sourceItems as $item) {
+            $newItem = new ReportItem();
+
+            // Report baru
+            $newItem->reportId = $targetReportId;
+
+            // Item number sama dengan sumber
+            $newItem->itemNo = $item->itemNo;
+
+            // Copy semua opsi
+            $newItem->targetOptionId = $item->targetOptionId;
+            $newItem->activityOptionId = $item->activityOptionId;
+            $newItem->personnelStrengthOptionId = $item->personnelStrengthOptionId;
+            $newItem->locationOptionId = $item->locationOptionId;
+            $newItem->personInChargeOptionId = $item->personInChargeOptionId;
+            $newItem->expectedResultOptionId = $item->expectedResultOptionId;
+            $newItem->remarks = $item->remarks;
+
+            $this->save($newItem);
+            $count++;
+        }
+
+        return $count;
     }
 
     private function mapRowToReportItem(array $result): ReportItem

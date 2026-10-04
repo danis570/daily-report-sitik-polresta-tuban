@@ -97,38 +97,42 @@
 <body class="transition-colors duration-300 dark:bg-dark dark:text-white">
 
     <!-- ============================== -->
-    <!-- NAVBAR (Public — h-16, konsisten) -->
+    <!-- NAVBAR (Public) -->
     <!-- ============================== -->
     <nav class="fixed top-0 left-0 right-0 z-50 h-16
             bg-white dark:bg-dark
             border-b-4 border-black dark:border-primary">
 
         <div class="max-w-7xl mx-auto h-full
-                px-4 sm:px-6 lg:px-8
+                px-4 sm:px-6 lg:px-8 xl:px-12
                 flex items-center justify-between">
 
             <!-- KIRI: Logo + TIK -->
-            <a href="/" class="flex items-center gap-2.5 group shrink-0">
-                <div class="w-10 h-10 flex items-center justify-center
+            <a href="/" class="flex items-center gap-2.5 md:gap-3 group shrink-0">
+
+                <div class="w-10 h-10 md:w-11 md:h-11
+                        flex items-center justify-center
                         border-2 border-transparent
                         group-hover:rotate-12 transition-transform
                         overflow-hidden">
                     <img src="/assets/logo.png" alt="Logo SITIK" class="w-full h-full object-contain" />
                 </div>
-                <span class="font-display text-2xl tracking-tighter uppercase
-                         leading-none
+
+                <span class="font-display text-2xl md:text-[1.75rem]
+                         tracking-tighter uppercase leading-none
                          text-black dark:text-white">
                     TIK
                 </span>
+
             </a>
 
 
             <!-- KANAN: About → Theme Toggle → Login -->
-            <div class="flex items-center gap-2 sm:gap-3">
+            <div class="flex items-center gap-2 sm:gap-3 md:gap-4 lg:gap-5">
 
-                <!-- 1. ABOUT (desktop only) -->
+                <!-- ABOUT (desktop only) -->
                 <a href="/about" class="hidden md:inline-flex items-center
-                       px-4 py-2
+                       px-4 py-2 md:px-5 md:py-2.5
                        text-black dark:text-white
                        font-black uppercase text-xs tracking-wider
                        border-2 border-transparent
@@ -139,8 +143,9 @@
                 </a>
 
 
-                <!-- 2. THEME TOGGLE -->
-                <button id="theme-toggle" class="w-10 h-10 flex items-center justify-center
+                <!-- THEME TOGGLE -->
+                <button id="theme-toggle" class="w-10 h-10 md:w-11 md:h-11
+                       flex items-center justify-center
                        bg-white dark:bg-dark
                        text-black dark:text-white
                        border-2 border-black dark:border-white
@@ -153,9 +158,9 @@
                 </button>
 
 
-                <!-- 3. LOGIN (desktop only — paling kanan) -->
+                <!-- LOGIN (desktop only — paling kanan) -->
                 <a href="/login" class="hidden md:inline-flex items-center justify-center gap-2
-                       px-5 py-2
+                       px-5 py-2 md:px-6 md:py-2.5
                        bg-primary text-black
                        border-2 border-black dark:border-white
                        font-black uppercase text-xs tracking-wider
@@ -169,7 +174,8 @@
 
 
                 <!-- MOBILE MENU BUTTON -->
-                <button id="mobile-menu-btn" class="md:hidden w-10 h-10 flex items-center justify-center
+                <button id="mobile-menu-btn" class="md:hidden w-10 h-10
+                       flex items-center justify-center
                        bg-[#00d982] text-black
                        border-2 border-black
                        shadow-[3px_3px_0_0_#000]

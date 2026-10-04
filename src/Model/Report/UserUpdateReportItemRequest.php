@@ -4,7 +4,8 @@ namespace Unirow2026\DailyReportSitikPolrestaTuban\Model\Report;
 
 class UserUpdateReportItemRequest
 {
-    public ?int $id = null; 
+    public ?int $id = null;
+    public ?int $itemNo = null;
     public ?int $targetOptionId = null;
     public ?int $activityOptionId = null;
     public ?int $personnelStrengthOptionId = null;

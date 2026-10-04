@@ -13,6 +13,10 @@ use Unirow2026\DailyReportSitikPolrestaTuban\Middleware\MustNotLoginMiddleware;
 use Unirow2026\DailyReportSitikPolrestaTuban\Middleware\MustLoginMiddleware;
 use Unirow2026\DailyReportSitikPolrestaTuban\Middleware\MustUserMiddleware;
 
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 require_once __DIR__ . '/../vendor/autoload.php';
 
 Database::getConnection('prod');
@@ -39,6 +43,7 @@ $router->post('/profile', [ProfileController::class, 'postUpdate'], [MustLoginMi
 $router->get('/report/options', [ReportOptionController::class, 'reportOptions'], [MustLoginMiddleware::class, MustUserMiddleware::class]);
 $router->get('/report/option/add', [ReportOptionController::class, 'addOption'], [MustLoginMiddleware::class, MustUserMiddleware::class]);
 $router->get('/report/option/edit/{id}', [ReportOptionController::class, 'editOption'], [MustLoginMiddleware::class, MustUserMiddleware::class]);
+$router->post('/report/option/quick-add', [ReportOptionController::class, 'quickAdd'], [MustLoginMiddleware::class, MustUserMiddleware::class]);
 $router->post('/report/option/add', [ReportOptionController::class, 'postAddOption'], [MustLoginMiddleware::class, MustUserMiddleware::class]);
 $router->post('/report/option/edit/{id}', [ReportOptionController::class, 'postEditOption'], [MustLoginMiddleware::class, MustUserMiddleware::class]);
 $router->post('/report/option/delete/{id}', [ReportOptionController::class, 'postDeleteOption'], [MustLoginMiddleware::class, MustUserMiddleware::class]);
@@ -58,6 +63,7 @@ $router->get('/report/print/pdf/{startDate}/{endDate}', [ReportController::class
 $router->get('/report/print/pdf/{date}', [ReportController::class, 'pdf'], [MustLoginMiddleware::class, MustUserMiddleware::class]);
 $router->get('/report/tracking', [ReportController::class, 'tracking'], [MustLoginMiddleware::class, MustUserMiddleware::class]);
 $router->get('/report/{date}', [ReportController::class, 'detail'], [MustLoginMiddleware::class, MustUserMiddleware::class]);
+$router->post('/report/duplicate/{id}', [ReportController::class, 'postDuplicate', [MustLoginMiddleware::class, MustUserMiddleware::class]]);
 $router->post('/report/tracking', [ReportController::class, 'postTracking'], [MustLoginMiddleware::class, MustUserMiddleware::class]);
 $router->post('/report/edit/{id}', [ReportController::class, 'postEdit'], [MustLoginMiddleware::class, MustUserMiddleware::class]);
 $router->post('/report/delete/{id}', [ReportController::class, 'postDelete'], [MustLoginMiddleware::class, MustUserMiddleware::class]);

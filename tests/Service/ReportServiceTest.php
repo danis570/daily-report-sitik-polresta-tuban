@@ -5,30 +5,90 @@ namespace Unirow2026\DailyReportSitikPolrestaTuban\Service;
 use Exception;
 use PHPUnit\Framework\TestCase;
 use Unirow2026\DailyReportSitikPolrestaTuban\App\Database;
+use Unirow2026\DailyReportSitikPolrestaTuban\Domain\ReportOption;
 use Unirow2026\DailyReportSitikPolrestaTuban\Model\Report\UserAddReportRequest;
 use Unirow2026\DailyReportSitikPolrestaTuban\Model\Report\UserAddReportResponse;
 use Unirow2026\DailyReportSitikPolrestaTuban\Model\User\UserRegisterRequest;
+use Unirow2026\DailyReportSitikPolrestaTuban\Repository\ReportItemRepository;
+use Unirow2026\DailyReportSitikPolrestaTuban\Repository\ReportOptionRepository;
 use Unirow2026\DailyReportSitikPolrestaTuban\Repository\ReportRepository;
 use Unirow2026\DailyReportSitikPolrestaTuban\Repository\UserRepository;
 
 class ReportServiceTest extends TestCase
 {
     private ReportService $reportService;
+    private ReportItemRepository $reportItemRepository;
     private ReportRepository $reportRepository;
     private UserService $userService;
     private UserRepository $userRepository;
 
+    private ReportOptionRepository $reportOptionRepository;
+
     protected function setUp(): void
     {
         $connection = Database::getConnection();
+
         $this->reportRepository = new ReportRepository($connection);
-        $this->reportService = new ReportService($this->reportRepository);
+        $this->reportItemRepository = new ReportItemRepository($connection);
+        $this->reportOptionRepository = new ReportOptionRepository($connection);   // ← TAMBAH
+
+        $this->reportService = new ReportService(
+            $this->reportRepository,
+            $this->reportItemRepository
+        );
 
         $this->userRepository = new UserRepository($connection);
         $this->userService = new UserService($this->userRepository);
 
+        // Bersihkan
+        $this->reportItemRepository->deleteAll();       // ← TAMBAH
+        $this->reportOptionRepository->deleteAll();     // ← TAMBAH
         $this->reportRepository->deleteAll();
         $this->userRepository->deleteAll();
+    }
+
+    private function createFullItem(int $reportId, int $itemNo): void
+    {
+        $option = new ReportOption();
+        $option->category = 'activity';
+        $option->name = 'Test ' . $itemNo . ' ' . uniqid();
+        $option->description = null;
+        $saved = $this->reportOptionRepository->save($option);
+
+        $item = new \Unirow2026\DailyReportSitikPolrestaTuban\Domain\ReportItem();
+        $item->reportId = $reportId;
+        $item->itemNo = $itemNo;
+        $item->targetOptionId = $saved->id;
+        $item->activityOptionId = $saved->id;
+        $item->personnelStrengthOptionId = $saved->id;
+        $item->locationOptionId = $saved->id;
+        $item->personInChargeOptionId = $saved->id;
+        $item->expectedResultOptionId = $saved->id;
+        $item->remarks = 'Remarks item ' . $itemNo;
+
+        $this->reportItemRepository->save($item);
+    }
+
+    private function createReportForTest(string $date, ?int $createdBy = null): int
+    {
+        $request = new UserAddReportRequest();
+        $request->reportDate = $date;
+        $request->createdBy = $createdBy ?? $this->createUser('dup-' . uniqid() . '@gmail.com');
+
+        $response = $this->reportService->create($request);
+
+        return $response->report->id;
+    }
+
+    private function createUser(string $email): int
+    {
+        $userRequest = new UserRegisterRequest();
+        $userRequest->email = $email;
+        $userRequest->password = 'password123';
+
+        $userResult = $this->userService->register($userRequest);
+
+        return $userResult->user->id;
     }
 
     public function testCreateSuccess()
@@ -150,5 +210,151 @@ class ReportServiceTest extends TestCase
 
         $check = $this->reportRepository->findById($createResponse->report->id);
         self::assertNull($check);
+    }
+
+    // ============================================================
+    // TEST: duplicate()
+    // ============================================================
+
+    public function testDuplicateSuccess(): void
+    {
+        $userId = $this->createUser('dup-success@gmail.com');
+        $sourceId = $this->createReportForTest('2026-10-01', $userId);
+
+        // Buat 3 item di source
+        $this->createFullItem($sourceId, 1);
+        $this->createFullItem($sourceId, 2);
+        $this->createFullItem($sourceId, 3);
+
+        // Duplikat ke tanggal baru
+        $new = $this->reportService->duplicate($sourceId, '2026-10-15');
+
+        self::assertNotNull($new->id);
+        self::assertNotEquals($sourceId, $new->id);
+        self::assertEquals('2026-10-15', $new->reportDate->format('Y-m-d'));
+
+        // Cek 3 item tersalin
+        $newItems = $this->reportItemRepository->findByReportId($new->id);
+        self::assertCount(3, $newItems);
+    }
+
+    public function testDuplicateWithCreatedBy(): void
+    {
+        // Buat user asli untuk dijadikan createdBy
+        $userId = $this->createUser('dup-createdby-target@gmail.com');
+        $sourceId = $this->createReportForTest('2026-10-01', $userId);
+
+        // Duplikat dengan createdBy = user yang baru dibuat
+        $new = $this->reportService->duplicate($sourceId, '2026-10-15', $userId);
+
+        self::assertEquals($userId, $new->createdBy);
+    }
+
+    public function testDuplicateCreatedByFallbackToSource(): void
+    {
+        $userId = $this->createUser('dup-fallback@gmail.com');
+        $sourceId = $this->createReportForTest('2026-10-01', $userId);
+
+        // Duplikat tanpa createdBy (null) → harus fallback ke createdBy source
+        $new = $this->reportService->duplicate($sourceId, '2026-10-15');
+
+        self::assertEquals($userId, $new->createdBy);
+    }
+
+    public function testDuplicateEmptySourceReport(): void
+    {
+        $userId = $this->createUser('dup-empty@gmail.com');
+        $sourceId = $this->createReportForTest('2026-10-01', $userId);
+        // Tidak ada item
+
+        $new = $this->reportService->duplicate($sourceId, '2026-10-15');
+
+        self::assertNotNull($new->id);
+
+        $newItems = $this->reportItemRepository->findByReportId($new->id);
+        self::assertCount(0, $newItems);
+    }
+
+    public function testDuplicatePreservesAllFields(): void
+    {
+        $userId = $this->createUser('dup-preserve@gmail.com');
+        $sourceId = $this->createReportForTest('2026-10-01', $userId);
+
+        // Buat item dengan itemNo = 5
+        $this->createFullItem($sourceId, 5);
+
+        $sourceItems = $this->reportItemRepository->findByReportId($sourceId);
+        $originalItem = $sourceItems[0];
+
+        // Duplikat
+        $new = $this->reportService->duplicate($sourceId, '2026-10-15');
+
+        $newItems = $this->reportItemRepository->findByReportId($new->id);
+        self::assertCount(1, $newItems);
+
+        $copied = $newItems[0];
+
+        self::assertEquals($new->id, $copied->reportId);
+        self::assertEquals($originalItem->itemNo, $copied->itemNo);
+        self::assertEquals($originalItem->targetOptionId, $copied->targetOptionId);
+        self::assertEquals($originalItem->activityOptionId, $copied->activityOptionId);
+        self::assertEquals($originalItem->personnelStrengthOptionId, $copied->personnelStrengthOptionId);
+        self::assertEquals($originalItem->locationOptionId, $copied->locationOptionId);
+        self::assertEquals($originalItem->personInChargeOptionId, $copied->personInChargeOptionId);
+        self::assertEquals($originalItem->expectedResultOptionId, $copied->expectedResultOptionId);
+        self::assertEquals($originalItem->remarks, $copied->remarks);
+    }
+
+    public function testDuplicateDoesNotAffectSource(): void
+    {
+        $userId = $this->createUser('dup-source-safe@gmail.com');
+        $sourceId = $this->createReportForTest('2026-10-01', $userId);
+
+        $this->createFullItem($sourceId, 1);
+        $this->createFullItem($sourceId, 2);
+
+        // Duplikat
+        $this->reportService->duplicate($sourceId, '2026-10-15');
+
+        // Source tetap punya 2 item
+        $sourceItems = $this->reportItemRepository->findByReportId($sourceId);
+        self::assertCount(2, $sourceItems);
+
+        // Source tanggal tidak berubah
+        $sourceReloaded = $this->reportRepository->findById($sourceId);
+        self::assertEquals('2026-10-01', $sourceReloaded->reportDate->format('Y-m-d'));
+    }
+
+    public function testDuplicateFailsWhenSourceNotFound(): void
+    {
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage('Laporan sumber tidak ditemukan');
+
+        $this->reportService->duplicate(999999, '2026-10-15');
+    }
+
+    public function testDuplicateFailsWhenTargetDateInvalid(): void
+    {
+        $userId = $this->createUser('dup-invalid-date@gmail.com');
+        $sourceId = $this->createReportForTest('2026-10-01', $userId);
+
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage('Format tanggal tidak valid');
+
+        $this->reportService->duplicate($sourceId, 'bukan-tanggal');
+    }
+
+    public function testDuplicateFailsWhenTargetDateAlreadyExists(): void
+    {
+        $userId = $this->createUser('dup-date-exists@gmail.com');
+        $sourceId = $this->createReportForTest('2026-10-01', $userId);
+
+        // Buat report di tanggal target
+        $this->createReportForTest('2026-10-15', $userId);
+
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage('sudah dipakai');
+
+        $this->reportService->duplicate($sourceId, '2026-10-15');
     }
 }

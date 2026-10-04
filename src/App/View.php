@@ -13,9 +13,6 @@ class View
 
     public static function render(string $layouts, string $view, array $model)
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
 
         $data = array_merge(self::$globalData, $model);
         extract($data);
@@ -35,14 +32,16 @@ class View
         exit();
     }
 
-    public static function flashMessage(string $message)
+    public static function flashMessage(string $message, string $type = 'success'): void
     {
-        session_start();
+
         $_SESSION['flash_message'] = $message;
+        $_SESSION['flash_type'] = $type;
     }
 
-    public static function clearFlashMessage()
+    public static function clearFlashMessage(): void
     {
-        unset($_SESSION['flash_message']);
+
+        unset($_SESSION['flash_message'], $_SESSION['flash_type']);
     }
 }

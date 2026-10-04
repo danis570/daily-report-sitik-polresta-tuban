@@ -685,4 +685,164 @@ class ReportItemRepositoryTest extends TestCase
         self::assertSame($report->id, (int) $result[0]['report_id']);
         self::assertSame('2026-10-08', $result[0]['report_date']);
     }
+
+    // ============================================================
+    // TEST: copyItemsToReport()
+    // ============================================================
+
+    public function testCopyItemsToReportSuccess(): void
+    {
+        $sourceReport = $this->createReport('2026-10-01');
+        $targetReport = $this->createReport('2026-10-15');
+
+        // Buat 3 item di source
+        $this->reportItemRepository->save(
+            $this->createReportItem($sourceReport->id, 1)
+        );
+        $this->reportItemRepository->save(
+            $this->createReportItem($sourceReport->id, 2)
+        );
+        $this->reportItemRepository->save(
+            $this->createReportItem($sourceReport->id, 3)
+        );
+
+        // Copy
+        $count = $this->reportItemRepository
+            ->copyItemsToReport($sourceReport->id, $targetReport->id);
+
+        self::assertSame(3, $count);
+
+        // Cek item di target
+        $targetItems = $this->reportItemRepository
+            ->findByReportId($targetReport->id);
+
+        self::assertCount(3, $targetItems);
+    }
+
+    public function testCopyItemsToReportFromEmptySource(): void
+    {
+        $sourceReport = $this->createReport('2026-10-01');
+        $targetReport = $this->createReport('2026-10-15');
+
+        // Source kosong (tidak ada item)
+
+        $count = $this->reportItemRepository
+            ->copyItemsToReport($sourceReport->id, $targetReport->id);
+
+        self::assertSame(0, $count);
+
+        $targetItems = $this->reportItemRepository
+            ->findByReportId($targetReport->id);
+
+        self::assertCount(0, $targetItems);
+    }
+
+    public function testCopyItemsToReportPreservesAllFields(): void
+    {
+        $sourceReport = $this->createReport('2026-10-01');
+        $targetReport = $this->createReport('2026-10-15');
+
+        // Buat item dengan remarks khusus
+        $sourceItem = $this->createReportItem($sourceReport->id, 1);
+        $sourceItem->remarks = 'Remarks original';
+        $saved = $this->reportItemRepository->save($sourceItem);
+
+        // Copy
+        $this->reportItemRepository
+            ->copyItemsToReport($sourceReport->id, $targetReport->id);
+
+        // Ambil item di target
+        $targetItems = $this->reportItemRepository
+            ->findByReportId($targetReport->id);
+
+        self::assertCount(1, $targetItems);
+
+        $copied = $targetItems[0];
+
+        // Cek semua field tersalin
+        self::assertEquals($targetReport->id, $copied->reportId);
+        self::assertEquals($saved->itemNo, $copied->itemNo);
+        self::assertEquals($saved->targetOptionId, $copied->targetOptionId);
+        self::assertEquals($saved->activityOptionId, $copied->activityOptionId);
+        self::assertEquals($saved->personnelStrengthOptionId, $copied->personnelStrengthOptionId);
+        self::assertEquals($saved->locationOptionId, $copied->locationOptionId);
+        self::assertEquals($saved->personInChargeOptionId, $copied->personInChargeOptionId);
+        self::assertEquals($saved->expectedResultOptionId, $copied->expectedResultOptionId);
+        self::assertEquals('Remarks original', $copied->remarks);
+    }
+
+    public function testCopyItemsToReportDoesNotAffectSource(): void
+    {
+        $sourceReport = $this->createReport('2026-10-01');
+        $targetReport = $this->createReport('2026-10-15');
+
+        $this->reportItemRepository->save(
+            $this->createReportItem($sourceReport->id, 1)
+        );
+        $this->reportItemRepository->save(
+            $this->createReportItem($sourceReport->id, 2)
+        );
+
+        // Copy
+        $this->reportItemRepository
+            ->copyItemsToReport($sourceReport->id, $targetReport->id);
+
+        // Source tetap punya 2 item
+        $sourceItems = $this->reportItemRepository
+            ->findByReportId($sourceReport->id);
+        self::assertCount(2, $sourceItems);
+
+        // Target punya 2 item
+        $targetItems = $this->reportItemRepository
+            ->findByReportId($targetReport->id);
+        self::assertCount(2, $targetItems);
+
+        // Total = 4 item
+        self::assertSame(
+            4,
+            $this->reportItemRepository->countAll()
+        );
+    }
+
+    public function testCopyItemsToReportCreatesNewIds(): void
+    {
+        $sourceReport = $this->createReport('2026-10-01');
+        $targetReport = $this->createReport('2026-10-15');
+
+        $sourceItem = $this->reportItemRepository->save(
+            $this->createReportItem($sourceReport->id, 1)
+        );
+
+        $this->reportItemRepository
+            ->copyItemsToReport($sourceReport->id, $targetReport->id);
+
+        $targetItems = $this->reportItemRepository
+            ->findByReportId($targetReport->id);
+
+        // ID harus berbeda (item baru)
+        self::assertNotEquals($sourceItem->id, $targetItems[0]->id);
+    }
+
+    public function testCopyItemsToReportPreservesItemNo(): void
+    {
+        $sourceReport = $this->createReport('2026-10-01');
+        $targetReport = $this->createReport('2026-10-15');
+
+        $this->reportItemRepository->save(
+            $this->createReportItem($sourceReport->id, 5)
+        );
+        $this->reportItemRepository->save(
+            $this->createReportItem($sourceReport->id, 10)
+        );
+
+        $this->reportItemRepository
+            ->copyItemsToReport($sourceReport->id, $targetReport->id);
+
+        $targetItems = $this->reportItemRepository
+            ->findByReportId($targetReport->id);
+
+        // Urutan ASC: 5, 10
+        self::assertSame(5, $targetItems[0]->itemNo);
+        self::assertSame(10, $targetItems[1]->itemNo);
+    }
 }

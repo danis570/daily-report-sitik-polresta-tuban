@@ -102,6 +102,85 @@ class ReportOptionController extends BaseController
         }
     }
 
+    public function quickAdd(): void
+    {
+        // ✅ WAJIB: matikan display error supaya warning tidak merusak JSON
+        ini_set('display_errors', '0');
+        error_reporting(E_ALL);
+
+        // Response JSON
+        header('Content-Type: application/json; charset=utf-8');
+        header('X-Content-Type-Options: nosniff');
+
+        try {
+            // 1. Tangkap input
+            $name = trim($_POST['name'] ?? '');
+            $category = trim($_POST['category'] ?? '');
+
+            // 2. Validasi
+            if ($name === '') {
+                throw new Exception('Nama opsi wajib diisi.');
+            }
+
+            if ($category === '') {
+                throw new Exception('Kategori wajib diisi.');
+            }
+
+            // 3. Cek duplikat — kalau sudah ada, return existing
+            $existing = $this->reportOptionRepository
+                ->findByCategoryAndName($category, $name);
+
+            if ($existing !== null) {
+                echo json_encode([
+                    'success' => true,
+                    'data' => [
+                        'id' => $existing->id,
+                        'name' => $existing->name,
+                        'category' => $existing->category,
+                    ],
+                    'message' => 'Opsi sudah ada, dipilih otomatis.',
+                ]);
+                exit();
+            }
+
+            // 4. Simpan opsi baru via service
+            $request = new \Unirow2026\DailyReportSitikPolrestaTuban\Model\Report\UserAddReportOptionRequest();
+            $request->category = $category;
+            $request->name = $name;
+            $request->description = null;
+
+            $this->reportOptionService->create($request);
+
+            // ✅ Ambil ulang dari repository (lebih aman daripada `$response->option`)
+            $saved = $this->reportOptionRepository
+                ->findByCategoryAndName($category, $name);
+
+            if ($saved === null) {
+                throw new Exception('Gagal menyimpan opsi baru.');
+            }
+
+            echo json_encode([
+                'success' => true,
+                'data' => [
+                    'id' => $saved->id,
+                    'name' => $saved->name,
+                    'category' => $saved->category,
+                ],
+                'message' => 'Opsi baru berhasil ditambahkan.',
+            ]);
+
+        } catch (Exception $e) {
+            http_response_code(400);
+
+            echo json_encode([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ]);
+        }
+
+        exit();
+    }
+
     public function editOption(int $id)
     {
         $option = $this->reportOptionRepository->findById($id);
