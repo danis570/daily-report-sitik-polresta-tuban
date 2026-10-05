@@ -61,6 +61,7 @@
             min-height: 60px;
 
             margin-bottom: 8px;
+            margin-top: 8px;
         }
 
 
@@ -180,21 +181,15 @@
         .document-title .title {
             text-decoration: underline;
             display: inline-block;
-            /* 🔑 biar underline pas di teks saja */
             padding-bottom: 2px;
         }
 
         .document-title .meta {
             width: 280px;
-            /* 🔑 diperlebar biar proporsional */
-
-            margin: 8px auto 0;
-            /* 🔑 8px dari judul, auto = tengah */
-
+            margin: 6px auto 0;
             font-weight: 400;
-            line-height: 1.4;
-            /* 🔑 spasi antar baris lebih lega */
-
+            line-height: 1.2;
+            padding-left: 60px;
             text-align: left;
             font-size: 12pt;
             text-transform: uppercase;
@@ -246,7 +241,7 @@
             page-break-inside: auto;
 
             font-size: 12pt;
-            margin-top: 12px;
+            margin-top: 22px;
             margin-bottom: 10px;
         }
 
@@ -254,14 +249,14 @@
         .report-table td {
             border: 1px solid #000;
 
-            padding: 3px 4px;
+            padding: 8px 10px;
 
             vertical-align: top;
 
             word-wrap: break-word;
             overflow-wrap: break-word;
 
-            line-height: 1.1;
+            line-height: 1.4;
         }
 
 
@@ -313,7 +308,7 @@
         */
 
         .report-table .no {
-            width: 4%;
+            width: 6%;
             text-align: center;
         }
 
@@ -368,7 +363,7 @@
         .signature {
             width: 100%;
 
-            margin-top: 15px;
+            margin-top: 25px;
 
             page-break-inside: avoid;
         }
@@ -386,7 +381,7 @@
         }
 
         .signature-space {
-            height: 50px;
+            height: 80px;
         }
 
         .signature-name {
@@ -564,6 +559,22 @@
             $bulan . ' ' .
             $tahun;
 
+
+        // ============================================
+        // TANGGAL TTD — kondisional per halaman
+        // ============================================
+        if (!empty($isSecondPage)) {
+            // Halaman 2 (Hasil): tanggal pelaksanaan
+            $tanggalTtd = $tanggalIndonesia;
+        } else {
+            // Halaman 1 (Rencana): tanggal pembuatan report (created_at)
+            $created = $report->createdAt;
+
+            $tanggalTtd = $created->format('d') . ' ' .
+                $bulanIndonesia[$created->format('m')] . ' ' .
+                $created->format('Y');
+        }
+
         ?>
 
 
@@ -575,9 +586,7 @@
 
 
             <div class="title">
-
-                RENCANA KEGIATAN HARIAN SIE TIK POLRES TUBAN
-
+                <?= htmlspecialchars($titleDocument) ?>
             </div>
 
 
@@ -712,11 +721,51 @@
 
 
                             <td>
+                                <?php
+                                $activityText = $data['activityName'] ?? '';
 
-                                <?= htmlspecialchars(
-                                    $data['activityName'] ?? '-'
-                                ) ?>
+                                // 1. Coba split newline dulu
+                                $lines = array_filter(
+                                    array_map('trim', explode("\n", $activityText)),
+                                    fn($line) => $line !== ''
+                                );
 
+                                // 2. Kalau cuma 1 baris, coba split dengan nomor "1. 2. 3."
+                                if (count($lines) <= 1) {
+
+                                    if (preg_match('/\d+[\.\)]\s/', $activityText)) {
+
+                                        $parts = preg_split(
+                                            '/(?=\b\d+[\.\)]\s)/',
+                                            $activityText,
+                                            -1,
+                                            PREG_SPLIT_NO_EMPTY
+                                        );
+
+                                        $lines = array_filter(
+                                            array_map(function ($part) {
+                                                $clean = preg_replace('/^\d+[\.\)]\s*/', '', trim($part));
+                                                return trim($clean);
+                                            }, $parts),
+                                            fn($line) => $line !== ''
+                                        );
+                                    }
+                                }
+                                ?>
+
+                                <?php if (!empty($lines)): ?>
+                                    <?php if (count($lines) > 1): ?>
+                                        <ul style="margin: 0; padding-left: 16px; line-height: 1.3; list-style-type: disc;">
+                                            <?php foreach ($lines as $line): ?>
+                                                <li><?= htmlspecialchars($line) ?></li>
+                                            <?php endforeach; ?>
+                                        </ul>
+                                    <?php else: ?>
+                                        <?= htmlspecialchars($lines[0]) ?>
+                                    <?php endif; ?>
+                                <?php else: ?>
+                                    -
+                                <?php endif; ?>
                             </td>
 
 
@@ -749,9 +798,52 @@
 
                             <td>
 
-                                <?= htmlspecialchars(
-                                    $data['expectedResultName'] ?? '-'
-                                ) ?>
+                                <?php
+                                $expectedText = $data['expectedResultName'] ?? '';
+
+                                // 1. Coba split newline dulu
+                                $lines = array_filter(
+                                    array_map('trim', explode("\n", $expectedText)),
+                                    fn($line) => $line !== ''
+                                );
+
+                                // 2. Kalau cuma 1 baris, coba split dengan nomor "1. 2. 3."
+                                if (count($lines) <= 1) {
+
+                                    // Cek apakah ada pola "1." atau "1)"
+                                    if (preg_match('/\d+[\.\)]\s/', $expectedText)) {
+
+                                        $parts = preg_split(
+                                            '/(?=\b\d+[\.\)]\s)/',
+                                            $expectedText,
+                                            -1,
+                                            PREG_SPLIT_NO_EMPTY
+                                        );
+
+                                        $lines = array_filter(
+                                            array_map(function ($part) {
+                                                $clean = preg_replace('/^\d+[\.\)]\s*/', '', trim($part));
+                                                return trim($clean);
+                                            }, $parts),
+                                            fn($line) => $line !== ''
+                                        );
+                                    }
+                                }
+                                ?>
+
+                                <?php if (!empty($lines)): ?>
+                                    <?php if (count($lines) > 1): ?>
+                                        <ul style="margin: 0; padding-left: 16px; line-height: 1.3; list-style-type: disc;">
+                                            <?php foreach ($lines as $line): ?>
+                                                <li><?= htmlspecialchars($line) ?></li>
+                                            <?php endforeach; ?>
+                                        </ul>
+                                    <?php else: ?>
+                                        <?= htmlspecialchars($lines[0]) ?>
+                                    <?php endif; ?>
+                                <?php else: ?>
+                                    -
+                                <?php endif; ?>
 
                             </td>
 
@@ -798,7 +890,7 @@
                 <div>
 
                     Tuban,
-                    <?= htmlspecialchars($tanggalIndonesia) ?>
+                    <?= htmlspecialchars($tanggalTtd) ?>
 
                 </div>
 

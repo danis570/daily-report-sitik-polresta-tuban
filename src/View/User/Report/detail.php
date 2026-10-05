@@ -244,15 +244,16 @@
                                                     class="font-bold text-black dark:text-white"><?= htmlspecialchars($data['activityName']) ?></span>
                                             </div>
                                             <div>
-                                                <span class="block text-xs font-bold text-gray-400 uppercase">Lokasi Giat:</span>
-                                                <span
-                                                    class="font-bold text-black dark:text-white"><?= htmlspecialchars($data['locationName']) ?></span>
-                                            </div>
-                                            <div>
                                                 <span class="block text-xs font-bold text-gray-400 uppercase">Kuat Personel:</span>
                                                 <span
                                                     class="font-bold text-black dark:text-white"><?= htmlspecialchars($data['personnelName']) ?></span>
                                             </div>
+                                            <div>
+                                                <span class="block text-xs font-bold text-gray-400 uppercase">Lokasi Giat:</span>
+                                                <span
+                                                    class="font-bold text-black dark:text-white"><?= htmlspecialchars($data['locationName']) ?></span>
+                                            </div>
+                                            
                                             <div>
                                                 <span class="block text-xs font-bold text-gray-400 uppercase">Penanggung
                                                     Jawab:</span>

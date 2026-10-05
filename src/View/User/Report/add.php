@@ -155,50 +155,54 @@
                 <form action="/report/add" method="POST" class="space-y-7">
 
 
-                    <!-- Tanggal -->
+                    <!-- Tanggal Laporan (Pelaksanaan) -->
                     <div>
-
                         <label for="report_date" class="block mb-2
-                                   text-sm font-black uppercase tracking-wide
-                                   text-[#121212] dark:text-white">
-
-                            Tanggal Laporan
-
+               text-sm font-black uppercase tracking-wide
+               text-[#121212] dark:text-white">
+                            Tanggal Laporan (Pelaksanaan)
                         </label>
 
-
-                        <div class="relative">
-
-                            <input type="date" id="report_date" name="report_date"
-                                value="<?= htmlspecialchars($_POST['report_date'] ?? date('Y-m-d')) ?>" required class="block w-full
-                                       px-4 py-3
-                                       bg-white dark:bg-[#121212]
-                                       text-[#121212] dark:text-white
-                                       border-4 border-[#121212] dark:border-white
-                                       font-bold
-                                       outline-none
-                                       focus:ring-0
-                                       focus:border-[#00d982]
-                                       transition-colors">
-
-                        </div>
-
+                        <input type="date" id="report_date" name="report_date"
+                            value="<?= htmlspecialchars($_POST['report_date'] ?? date('Y-m-d')) ?>" required class="block w-full px-4 py-3
+               bg-white dark:bg-[#121212]
+               text-[#121212] dark:text-white
+               border-4 border-[#121212] dark:border-white
+               font-bold outline-none
+               focus:border-[#00d982] transition-colors">
 
                         <div class="mt-3 flex items-start gap-2">
-
-                            <span class="mt-1 w-2 h-2
-                                         flex-shrink-0
-                                         bg-[#00d982]
-                                         border border-[#121212]">
-                            </span>
-
-                            <p class="text-xs font-bold
-                                      text-gray-500 dark:text-gray-400">
-                                Sistem akan memvalidasi agar tanggal laporan tidak ganda.
+                            <span class="mt-1 w-2 h-2 flex-shrink-0 bg-[#00d982] border border-[#121212]"></span>
+                            <p class="text-xs font-bold text-gray-500 dark:text-gray-400">
+                                Tanggal pelaksanaan kegiatan.
                             </p>
-
                         </div>
+                    </div>
 
+
+                    <!-- Tanggal Pembuatan (Opsional) — BARU -->
+                    <div>
+                        <label for="created_at" class="block mb-2
+               text-sm font-black uppercase tracking-wide
+               text-[#121212] dark:text-white">
+                            Tanggal Pembuatan
+                            <span class="text-gray-400 dark:text-gray-500">(Opsional)</span>
+                        </label>
+
+                        <input type="date" id="created_at" name="created_at"
+                            value="<?= htmlspecialchars($_POST['created_at'] ?? '') ?>" class="block w-full px-4 py-3
+           bg-white dark:bg-[#121212]
+           text-[#121212] dark:text-white
+           border-4 border-[#121212] dark:border-white
+           font-bold outline-none
+           focus:border-[#00d982] transition-colors">
+
+                        <div class="mt-3 flex items-start gap-2">
+                            <span class="mt-1 w-2 h-2 flex-shrink-0 bg-[#00d982] border border-[#121212]"></span>
+                            <p class="text-xs font-bold text-gray-500 dark:text-gray-400">
+                                Kosongkan untuk otomatis pakai tanggal & jam saat ini.
+                            </p>
+                        </div>
                     </div>
 
 

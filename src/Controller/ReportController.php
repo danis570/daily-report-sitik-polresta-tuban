@@ -145,6 +145,7 @@ class ReportController extends BaseController
             $reportsWithProfile[] = [
                 'report' => $report,
                 'formattedDate' => $this->formatTanggalIndo($report->reportDate),
+                'formattedCreatedAt' => $this->formatTanggalIndo($report->createdAt),
                 'creatorName' => $creatorName,
             ];
         }
@@ -225,18 +226,48 @@ class ReportController extends BaseController
         $request->reportDate = $_POST['report_date'] ?? null;
         $request->createdBy = $userId ? (int) $userId : null;
 
+        // ✅ Handle created_at — tanggal saja, jam otomatis dari sistem
+        $createdAtInput = $_POST['created_at'] ?? null;
+
+        if (!empty($createdAtInput)) {
+            // User isi tanggal → pakai tanggal user + jam saat ini
+            try {
+                $dateOnly = new DateTimeImmutable($createdAtInput);
+
+                // Gabung dengan jam saat ini
+                $now = new DateTimeImmutable();
+                $request->createdAt = $dateOnly->setTime(
+                    (int) $now->format('H'),
+                    (int) $now->format('i'),
+                    (int) $now->format('s')
+                );
+            } catch (Exception $e) {
+                View::render('User', 'User/Report/add', [
+                    'title' => 'Tambah Laporan Harian',
+                    'current' => 'add',
+                    'error' => 'Format tanggal pembuatan tidak valid.',
+                    'oldInput' => $_POST,
+                ]);
+                return;
+            }
+        } else {
+            // Kosong → otomatis hari ini + jam sekarang
+            $request->createdAt = new DateTimeImmutable();
+        }
+
         try {
             $this->reportService->create($request);
             View::render('User', 'User/Report/add', [
                 'title' => 'Tambah Laporan Harian',
                 'current' => 'add',
-                'success' => 'Sukses menambahkan laporan baru pergi ke menu laporan untuk menambahkan item kegiatan'
+                'success' => 'Sukses menambahkan laporan baru. Pergi ke menu laporan untuk menambahkan item kegiatan.',
             ]);
         } catch (Exception $exception) {
             View::render('User', 'User/Report/add', [
                 'title' => 'Tambah Laporan Harian',
                 'current' => 'add',
-                'error' => $exception->getMessage()
+                'error' => $exception->getMessage(),
+                'oldInput' => $_POST,
             ]);
         }
     }
@@ -345,11 +376,39 @@ class ReportController extends BaseController
         $request->reportDate = $_POST['report_date'] ?? null;
         $request->createdBy = $userId ? (int) $userId : null;
 
+        // ✅ Handle created_at (tanggal saja, jam otomatis dari sistem)
+        $createdAtInput = $_POST['created_at'] ?? null;
+
+        if (!empty($createdAtInput)) {
+            try {
+                $dateOnly = new DateTimeImmutable($createdAtInput);
+                $now = new DateTimeImmutable();
+
+                // Gabung tanggal dari user + jam saat ini
+                $request->createdAt = $dateOnly->setTime(
+                    (int) $now->format('H'),
+                    (int) $now->format('i'),
+                    (int) $now->format('s')
+                );
+            } catch (Exception $e) {
+                View::render('User', 'User/Report/edit', [
+                    'title' => 'Ubah Induk Laporan Harian',
+                    'current' => 'report',
+                    'error' => 'Format tanggal pembuatan tidak valid.',
+                    'report' => $report
+                ]);
+                return;
+            }
+        } else {
+            // Kosong → pakai createdAt asli dari database
+            $request->createdAt = $report->createdAt;
+        }
+
         try {
             // 2. Jalankan logika pembaruan di Layer Service
             $this->reportService->update($request);
 
-            // 3. Sukses: Set flash message dan alihkan kembali ke halaman rekap utama
+            // 3. Sukses: Set flash message dan tampilkan kembali form
             View::render('User', 'User/Report/edit', [
                 'title' => 'Ubah Induk Laporan Harian',
                 'current' => 'report',
@@ -358,7 +417,7 @@ class ReportController extends BaseController
             ]);
 
         } catch (Exception $exception) {
-            // 4. Gagal: Tampilkan kembali formulir edit bawa pesan error
+            // 4. Gagal: Tampilkan kembali formulir edit dengan pesan error
             View::render('User', 'User/Report/edit', [
                 'title' => 'Ubah Induk Laporan Harian',
                 'current' => 'report',
@@ -575,83 +634,37 @@ class ReportController extends BaseController
         // TANGGAL
         // =========================
 
-        $formattedDate = $this->formatTanggalIndo(
-            $report->reportDate
-        );
+        $formattedDate = $this->formatTanggalIndo($report->reportDate);
 
         // =========================
         // ACTIVITIES
         // =========================
 
-        $allItems = $this->reportItemRepository->findByReportId(
-            $report->id
-        );
+        $allItems = $this->reportItemRepository->findByReportId($report->id);
 
         $activitiesWithNames = [];
 
         foreach ($allItems as $item) {
-
-            $target = $this->reportOptionRepository->findById(
-                $item->targetOptionId
-            );
-
-            $activity = $this->reportOptionRepository->findById(
-                $item->activityOptionId
-            );
-
-            $personnel = $this->reportOptionRepository->findById(
-                $item->personnelStrengthOptionId
-            );
-
-            $location = $this->reportOptionRepository->findById(
-                $item->locationOptionId
-            );
-
-            $pic = $this->reportOptionRepository->findById(
-                $item->personInChargeOptionId
-            );
-
-            $result = $this->reportOptionRepository->findById(
-                $item->expectedResultOptionId
-            );
+            $target = $this->reportOptionRepository->findById($item->targetOptionId);
+            $activity = $this->reportOptionRepository->findById($item->activityOptionId);
+            $personnel = $this->reportOptionRepository->findById($item->personnelStrengthOptionId);
+            $location = $this->reportOptionRepository->findById($item->locationOptionId);
+            $pic = $this->reportOptionRepository->findById($item->personInChargeOptionId);
+            $result = $this->reportOptionRepository->findById($item->expectedResultOptionId);
 
             $activitiesWithNames[] = [
                 'item' => $item,
-
-                'targetName' =>
-                    $target
-                    ? $target->name
-                    : 'Tidak Diketahui',
-
-                'activityName' =>
-                    $activity
-                    ? $activity->name
-                    : 'Tidak Diketahui',
-
-                'personnelName' =>
-                    $personnel
-                    ? $personnel->name
-                    : 'Tidak Diketahui',
-
-                'locationName' =>
-                    $location
-                    ? $location->name
-                    : 'Tidak Diketahui',
-
-                'picName' =>
-                    $pic
-                    ? $pic->name
-                    : 'Tidak Diketahui',
-
-                'expectedResultName' =>
-                    $result
-                    ? $result->name
-                    : 'Tidak Diketahui',
+                'targetName' => $target ? $target->name : 'Tidak Diketahui',
+                'activityName' => $activity ? $activity->name : 'Tidak Diketahui',
+                'personnelName' => $personnel ? $personnel->name : 'Tidak Diketahui',
+                'locationName' => $location ? $location->name : 'Tidak Diketahui',
+                'picName' => $pic ? $pic->name : 'Tidak Diketahui',
+                'expectedResultName' => $result ? $result->name : 'Tidak Diketahui',
             ];
         }
 
         // =========================
-        // RENDER HTML
+        // RENDER HTML — 2 HALAMAN
         // =========================
 
         ob_start();
@@ -666,6 +679,18 @@ class ReportController extends BaseController
 
         extract($data);
 
+        // ============================================
+        // HALAMAN 1: Rencana Kegiatan
+        // ============================================
+        $titleDocument = 'RENCANA KEGIATAN HARIAN SIE TIK POLRES TUBAN';
+        $isSecondPage = false;   // ← TAMBAH
+        require __DIR__ . '/../View/User/Report/pdf.php';
+
+        // ============================================
+        // HALAMAN 2: Hasil Kegiatan
+        // ============================================
+        $titleDocument = 'HASIL KEGIATAN HARIAN SIE TIK POLRES TUBAN';
+        $isSecondPage = true;    // ← TAMBAH
         require __DIR__ . '/../View/User/Report/pdf.php';
 
         $html = ob_get_clean();
@@ -680,9 +705,7 @@ class ReportController extends BaseController
         // FORMAT NAMA FILE
         // =========================
 
-        $dateIndo = $this->formatTanggalIndo(
-            $report->reportDate
-        );
+        $dateIndo = $this->formatTanggalIndo($report->reportDate);
 
         $filename = strtolower(
             str_replace(
@@ -694,26 +717,15 @@ class ReportController extends BaseController
 
         $filename = 'laporan-' . $filename . '.pdf';
 
-
         // =========================
         // OUTPUT
         // =========================
 
         header('Content-Type: application/pdf');
-
-        header(
-            'Content-Disposition: inline; filename="' .
-            $filename .
-            '"'
-        );
-
-        header(
-            'Content-Length: ' .
-            strlen($pdf)
-        );
+        header('Content-Disposition: inline; filename="' . $filename . '"');
+        header('Content-Length: ' . strlen($pdf));
 
         echo $pdf;
-
         exit();
     }
 
@@ -945,17 +957,44 @@ class ReportController extends BaseController
 
             // =====================================
             // 6. Render HTML
+            //    Urutan: Semua RENCANA dulu, baru semua HASIL
             // =====================================
 
             ob_start();
 
+            // =====================================
+            // 6a. LOOP 1 — Semua RENCANA KEGIATAN
+            // =====================================
 
-            extract($data);
+            foreach ($reportsData as $index => $item) {
 
+                // Set variabel untuk view pdf.php
+                $report = $item['report'];
+                $formattedDate = $item['formattedDate'];
+                $creatorName = $item['creatorName'];
+                $activities = $item['activities'];
 
-            require __DIR__ .
-                '/../View/User/Report/pdf-range.php';
+                $titleDocument = 'RENCANA KEGIATAN HARIAN SIE TIK POLRES TUBAN';
+                $isSecondPage = false;
+                require __DIR__ . '/../View/User/Report/pdf.php';
+            }
 
+            // =====================================
+            // 6b. LOOP 2 — Semua HASIL KEGIATAN
+            // =====================================
+
+            foreach ($reportsData as $index => $item) {
+
+                // Set variabel untuk view pdf.php
+                $report = $item['report'];
+                $formattedDate = $item['formattedDate'];
+                $creatorName = $item['creatorName'];
+                $activities = $item['activities'];
+
+                $titleDocument = 'HASIL KEGIATAN HARIAN SIE TIK POLRES TUBAN';
+                $isSecondPage = true;
+                require __DIR__ . '/../View/User/Report/pdf.php';
+            }
 
             $html = ob_get_clean();
 

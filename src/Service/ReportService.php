@@ -30,6 +30,7 @@ class ReportService
         $report = new Report();
         $report->reportDate = $reportDate;
         $report->createdBy = $request->createdBy;
+        $report->createdAt = $request->createdAt ?? new DateTimeImmutable();
 
         $savedReport = $this->reportRepository->save($report);
 
@@ -74,6 +75,10 @@ class ReportService
         // 3. Petakan perubahan data baru
         $report->reportDate = $reportDate;
         $report->createdBy = $request->createdBy;
+
+        if ($request->createdAt !== null) {
+            $report->createdAt = $request->createdAt;
+        }
 
         // 4. Lakukan pembaruan via repository
         $this->reportRepository->update($report);

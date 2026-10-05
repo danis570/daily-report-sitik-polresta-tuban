@@ -18,16 +18,18 @@ class ReportRepository
     public function save(Report $report): Report
     {
         $stmt = $this->pdo->prepare("
-            INSERT INTO reports (
-                report_date,
-                created_by
-            )
-            VALUES (?, ?)
-        ");
+        INSERT INTO reports (
+            report_date,
+            created_by,
+            created_at
+        )
+        VALUES (?, ?, ?)
+    ");
 
         $stmt->execute([
             $report->reportDate->format('Y-m-d'),
             $report->createdBy,
+            $report->createdAt?->format('Y-m-d H:i:s') ?? date('Y-m-d H:i:s'),
         ]);
 
         $report->id = (int) $this->pdo->lastInsertId();
@@ -124,7 +126,7 @@ class ReportRepository
 
         $stmt->execute([
             ':start' => $start->format('Y-m-d'),
-            ':end'   => $end->format('Y-m-d'),
+            ':end' => $end->format('Y-m-d'),
         ]);
 
         return (int) $stmt->fetchColumn();
@@ -144,7 +146,7 @@ class ReportRepository
         ");
 
         $stmt->bindValue(':start', $start->format('Y-m-d'));
-        $stmt->bindValue(':end',   $end->format('Y-m-d'));
+        $stmt->bindValue(':end', $end->format('Y-m-d'));
         $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
         $stmt->execute();
 
@@ -184,7 +186,7 @@ class ReportRepository
 
         $statement->execute([
             'start_date' => $startDate->format('Y-m-d'),
-            'end_date'   => $endDate->format('Y-m-d'),
+            'end_date' => $endDate->format('Y-m-d'),
         ]);
 
         $reports = [];
@@ -222,15 +224,19 @@ class ReportRepository
     public function update(Report $report): bool
     {
         $stmt = $this->pdo->prepare("
-            UPDATE reports
-            SET report_date = ?,
-                created_by = ?
-            WHERE id = ?
-        ");
+        UPDATE reports
+        SET
+            report_date = ?,
+            created_by = ?,
+            created_at = ?,
+            updated_at = NOW()
+        WHERE id = ?
+    ");
 
         return $stmt->execute([
             $report->reportDate->format('Y-m-d'),
             $report->createdBy,
+            $report->createdAt?->format('Y-m-d H:i:s') ?? date('Y-m-d H:i:s'),
             $report->id,
         ]);
     }

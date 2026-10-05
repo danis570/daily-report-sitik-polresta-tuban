@@ -209,72 +209,74 @@
                 <!-- Form -->
                 <form action="/report/edit/<?= $report->id ?>" method="POST" class="space-y-7">
 
-
-                    <!-- Tanggal -->
+                    <!-- Tanggal Laporan (Pelaksanaan) -->
                     <div>
-
                         <label for="report_date" class="block mb-2
-                                   text-sm font-black uppercase tracking-wide
-                                   text-[#121212] dark:text-white">
-
+                   text-sm font-black uppercase tracking-wide
+                   text-[#121212] dark:text-white">
                             Tanggal Laporan
-
                         </label>
 
-
                         <div class="relative">
-
                             <input type="date" id="report_date" name="report_date" value="<?= htmlspecialchars(
                                 $_POST['report_date']
                                 ?? $report->reportDate->format('Y-m-d')
-                            ) ?>" required class="block w-full
-                                       px-4 py-3
-                                       bg-white dark:bg-[#121212]
-                                       text-[#121212] dark:text-white
-                                       border-4 border-[#121212] dark:border-white
-                                       font-bold
-                                       outline-none
-                                       focus:ring-0
-                                       focus:border-[#00d982]
-                                       transition-colors">
-
+                            ) ?>" required class="block w-full px-4 py-3
+                       bg-white dark:bg-[#121212]
+                       text-[#121212] dark:text-white
+                       border-4 border-[#121212] dark:border-white
+                       font-bold outline-none
+                       focus:ring-0
+                       focus:border-[#00d982]
+                       transition-colors">
                         </div>
 
-
-                        <!-- Information -->
                         <div class="mt-3 flex items-start gap-2">
-
-                            <span class="mt-1 w-2 h-2
-                                         flex-shrink-0
-                                         bg-[#00d982]
-                                         border border-[#121212]">
-                            </span>
-
-                            <p class="text-xs font-bold
-                                      text-gray-500 dark:text-gray-400">
-
-                                Sistem akan memvalidasi agar tanggal laporan
-                                tidak ganda dengan laporan lainnya.
-
+                            <span class="mt-1 w-2 h-2 flex-shrink-0 bg-[#00d982] border border-[#121212]"></span>
+                            <p class="text-xs font-bold text-gray-500 dark:text-gray-400">
+                                Sistem akan memvalidasi agar tanggal laporan tidak ganda dengan laporan lainnya.
                             </p>
+                        </div>
+                    </div>
 
+
+                    <!-- Tanggal Pembuatan (Opsional) — BARU -->
+                    <div>
+                        <label for="created_at" class="block mb-2
+                   text-sm font-black uppercase tracking-wide
+                   text-[#121212] dark:text-white">
+                            Tanggal Pembuatan
+                            <span class="text-gray-400 dark:text-gray-500">(Opsional)</span>
+                        </label>
+
+                        <div class="relative">
+                            <input type="date" id="created_at" name="created_at" value="<?= htmlspecialchars(
+                                $_POST['created_at']
+                                ?? $report->createdAt->format('Y-m-d')
+                            ) ?>" class="block w-full px-4 py-3
+                       bg-white dark:bg-[#121212]
+                       text-[#121212] dark:text-white
+                       border-4 border-[#121212] dark:border-white
+                       font-bold outline-none
+                       focus:ring-0
+                       focus:border-[#00d982]
+                       transition-colors">
                         </div>
 
+                        <div class="mt-3 flex items-start gap-2">
+                            <span class="mt-1 w-2 h-2 flex-shrink-0 bg-[#00d982] border border-[#121212]"></span>
+                            <p class="text-xs font-bold text-gray-500 dark:text-gray-400">
+                                Kosongkan untuk memakai tanggal pembuatan asli.
+                            </p>
+                        </div>
                     </div>
 
 
                     <!-- Divider -->
-                    <div class="border-t-4 border-dashed
-                                border-gray-300 dark:border-gray-700">
-                    </div>
+                    <div class="border-t-4 border-dashed border-gray-300 dark:border-gray-700"></div>
 
-
-                    <!-- Actions -->
-                    <div class="flex flex-col-reverse sm:flex-row
-                                sm:items-center sm:justify-between
-                                gap-4">
-
-
+                    <!-- Actions — tidak berubah -->
+                    <div class="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-4">
                         <!-- Kembali -->
                         <a href="/reports" class="inline-flex items-center justify-center gap-2
                                    px-5 py-3
@@ -302,8 +304,6 @@
                             Kembali
 
                         </a>
-
-
                         <!-- Simpan -->
                         <button type="submit" class="inline-flex items-center justify-center gap-2
                                    px-6 py-3
@@ -330,7 +330,6 @@
                             Simpan Perubahan
 
                         </button>
-
                     </div>
 
                 </form>
