@@ -170,6 +170,16 @@
                 <span>Opsi</span>
             </a>
 
+            <!-- Generate -->
+            <a href="/report/generate"
+                class="flex items-center gap-3 px-4 py-3 font-black uppercase text-sm border-4 transition-all
+                <?= $current === 'generate'
+            ? 'bg-primary text-black border-black shadow-[4px_4px_0_0_#121212]'
+            : 'border-transparent hover:bg-primary hover:text-black hover:border-black dark:text-white dark:hover:border-white' ?>">
+                <i data-lucide="sparkles" class="w-5 h-5 shrink-0"></i>
+                <span>Generate</span>
+            </a>
+
             <!-- Akun -->
             <div class="pt-4 mt-4 border-t-2 border-dashed border-gray-300 dark:border-gray-700">
                 <p class="px-2 mb-3 text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400">

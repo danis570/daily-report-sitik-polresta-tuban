@@ -3,6 +3,7 @@
 namespace Unirow2026\DailyReportSitikPolrestaTuban\App;
 
 use PDO;
+use Throwable;
 
 class Database
 {
@@ -21,5 +22,26 @@ class Database
     public static function clearConnection()
     {
         self::$pdo = null;
+    }
+
+    /**
+     * Jalankan callback dalam transaksi.
+     * Kalau callback throw exception → rollback otomatis.
+     */
+    public static function transaction(callable $callback)
+    {
+        $pdo = self::getConnection();
+        $pdo->beginTransaction();
+
+        try {
+            $result = $callback($pdo);
+            $pdo->commit();
+            return $result;
+        } catch (Throwable $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            throw $e;
+        }
     }
 }

@@ -6,6 +6,7 @@ use Unirow2026\DailyReportSitikPolrestaTuban\Controller\HomeController;
 use Unirow2026\DailyReportSitikPolrestaTuban\Controller\UserController;
 use Unirow2026\DailyReportSitikPolrestaTuban\Controller\ProfileController;
 use Unirow2026\DailyReportSitikPolrestaTuban\Controller\ReportController;
+use Unirow2026\DailyReportSitikPolrestaTuban\Controller\ReportGenerateController;
 use Unirow2026\DailyReportSitikPolrestaTuban\Controller\ReportItemController;
 use Unirow2026\DailyReportSitikPolrestaTuban\Controller\ReportOptionController;
 use Unirow2026\DailyReportSitikPolrestaTuban\Middleware\MustAdminMiddleware;
@@ -54,6 +55,10 @@ $router->get('/report/item/edit/{id}', [ReportItemController::class, 'editItem']
 $router->post('/report/item/edit/{id}', [ReportItemController::class, 'postEditItem'], [MustLoginMiddleware::class, MustUserMiddleware::class]);
 $router->post('/report/item/{date}/add', [ReportItemController::class, 'postReportItemAdd'], [MustLoginMiddleware::class, MustUserMiddleware::class]);
 $router->post('/report/item/delete/{id}', [ReportItemController::class, 'postDeleteItem'], [MustLoginMiddleware::class, MustUserMiddleware::class]);
+
+// REPORT GENERATE CONTROLLER
+$router->get('/report/generate', [ReportGenerateController::class, 'form'], [MustLoginMiddleware::class, MustUserMiddleware::class]);
+$router->post('/report/generate', [ReportGenerateController::class, 'postGenerate'], [MustLoginMiddleware::class, MustUserMiddleware::class]);
 
 // REPORT CONTROLLER
 $router->get('/reports', [ReportController::class, 'reports'], [MustLoginMiddleware::class, MustUserMiddleware::class]);

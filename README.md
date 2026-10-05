@@ -1,8 +1,8 @@
 # SITIK Polresta Tuban — Daily Report System
 
-Sistem Informasi Laporan Harian TIK Polresta Tuban. Aplikasi web untuk mengelola laporan harian kegiatan SITIK beserta rincian giat, opsi jawaban dinamis, dan pelacakan penggunaan opsi.
+Sistem Informasi Laporan Harian TIK Polresta Tuban. Aplikasi web untuk mengelola laporan harian kegiatan SITIK beserta rincian giat, opsi jawaban dinamis, pelacakan penggunaan opsi, dan **generate laporan otomatis**.
 
-**Versi:** 1.0.0 · **PHP:** 8.5+ · **License:** MIT
+**Versi:** 1.1.0 · **PHP:** 8.5+ · **License:** MIT
 
 ---
 
@@ -15,6 +15,7 @@ Sistem Informasi Laporan Harian TIK Polresta Tuban. Aplikasi web untuk mengelola
 - [Konfigurasi](#konfigurasi)
 - [Testing](#testing)
 - [Daftar Endpoint](#daftar-endpoint)
+- [Panduan Generate Otomatis](#panduan-generate-otomatis)
 - [Changelog](#changelog)
 - [Cara Release](#cara-release)
 - [Lisensi](#lisensi)
@@ -35,6 +36,17 @@ Sistem Informasi Laporan Harian TIK Polresta Tuban. Aplikasi web untuk mengelola
 - **Nomor giat manual** — user dapat mengatur nomor urut sesuai kebutuhan
 - Validasi anti-duplikat nomor giat (create & update)
 - **Duplikat laporan** ke tanggal baru beserta semua item giatnya
+
+### Generate Laporan Otomatis ⭐ BARU
+- Generate laporan untuk **rentang tanggal** (maks 31 hari per generate)
+- Hanya hari **Senin–Jumat** yang di-generate (Sabtu/Minggu otomatis skip)
+- **Tanggal merah nasional** otomatis di-skip (1 Jan, 17 Agt, 25 Des)
+- **Tanggal merah manual** bisa diinput dari form (cuti bersama, libur lokal)
+- **Anti-duplikat** — tanggal yang sudah punya laporan otomatis di-skip
+- Item giat disalin dari **report template acuan (ID 66–70)** berdasarkan hari
+- **Atomic transaction** — kalau gagal, semua di-rollback
+- Notifikasi informatif setelah generate — jumlah generated & detail skip per alasan
+- **Proteksi template** — report 66–70 tidak bisa dihapus (menjaga integritas acuan)
 
 ### Opsi Jawaban Dinamis
 - Kelola opsi jawaban berdasarkan kategori:
@@ -94,17 +106,30 @@ daily-report-sitik-polresta-tuban/
 │   └── uploads/avatar/         # Upload avatar user
 ├── src/
 │   ├── App/                    # Core (Database, View, BaseController)
+│   ├── Config/                 # HolidayProvider (tanggal merah fixed)
 │   ├── Controller/             # Controller (HTTP handler)
 │   ├── Domain/                 # Entity (Report, ReportItem, dll)
 │   ├── Middleware/             # Auth guard
 │   ├── Model/                  # DTO Request/Response
+│   │   └── Report/             # DTO untuk Report & Generate
 │   ├── Repository/             # Akses database
 │   ├── Service/                # Business logic
+│   │   └── ReportGeneratorService.php  # Generate otomatis
 │   └── View/                   # Template (User, Admin, Public)
+│       └── User/Report/
+│           ├── reports.php
+│           ├── add.php
+│           ├── edit.php
+│           ├── detail.php
+│           ├── tracking.php
+│           └── generate.php    # ⭐ BARU — form generate
 ├── tests/                      # Unit test (PHPUnit)
 │   ├── Repository/
 │   └── Service/
-├── vendor/                     # Composer dependencies
+│       ├── ReportServiceTest.php
+│       ├── ReportGeneratorServiceTest.php  # ⭐ BARU
+│       └── ...
+├── vendor/
 ├── composer.json
 ├── composer.lock
 └── README.md
@@ -144,6 +169,15 @@ Import dump database:
 ```bash
 mysql -u root -p daily_report_tik_polresta_tuban_db < dump-daily_report_tik_polresta_tuban_db.sql
 ```
+
+> ⚠️ **Penting untuk fitur Generate Otomatis:** Pastikan report template dengan **ID 66–70** ada di database, beserta item giatnya. Report ini adalah acuan untuk generate:
+> - **66** = Template Senin
+> - **67** = Template Selasa
+> - **68** = Template Rabu
+> - **69** = Template Kamis
+> - **70** = Template Jumat
+>
+> Kalau belum ada, jalankan seeder di `database/seed_template_66_70.sql` (lihat bagian [Panduan Generate Otomatis](#panduan-generate-otomatis)).
 
 **4. Konfigurasi database**
 
@@ -193,6 +227,20 @@ Session di-start di `public/index.php` — sebelum autoload apapun. Guard `PHP_S
 - Maks ukuran: **2 MB**
 - Validasi MIME type dengan `finfo`
 
+### Tanggal Merah Fixed
+
+Daftar tanggal merah fixed (berlaku tiap tahun) dikonfigurasi di `src/Config/HolidayProvider.php`:
+
+```php
+private const FIXED_HOLIDAYS = [
+    '01-01', // Tahun Baru
+    '08-17', // Kemerdekaan RI
+    '12-25', // Natal
+];
+```
+
+Kalau mau menambahkan tanggal merah fixed baru, edit array tersebut.
+
 ---
 
 ## Testing
@@ -204,7 +252,7 @@ vendor/bin/phpunit tests
 
 **Expected output:**
 ```
-OK (139 tests, 330 assertions)
+OK (175 tests, 437 assertions)
 ```
 
 ### Jalankan Test Spesifik
@@ -212,15 +260,16 @@ OK (139 tests, 330 assertions)
 ```bash
 # Per file
 vendor/bin/phpunit tests/Service/ReportServiceTest.php
-vendor/bin/phpunit tests/Repository/ReportItemRepositoryTest.php
+vendor/bin/phpunit tests/Service/ReportGeneratorServiceTest.php
+vendor/bin/phpunit tests/Repository/ReportRepositoryTest.php
 
 # Per direktori
 vendor/bin/phpunit tests/Service
 vendor/bin/phpunit tests/Repository
 
 # Filter by nama test
-vendor/bin/phpunit --filter testDuplicate tests
-vendor/bin/phpunit --filter testDelete tests/Service/ReportOptionServiceTest.php
+vendor/bin/phpunit --filter testGenerate tests
+vendor/bin/phpunit --filter testDuplicate tests/Service/ReportServiceTest.php
 ```
 
 ### Coverage Test
@@ -259,8 +308,14 @@ Buka `coverage/index.html` di browser untuk lihat persentase coverage.
 | GET | `/report/{date}` | Detail laporan |
 | GET | `/report/edit/{id}` | Form edit laporan |
 | POST | `/report/edit/{id}` | Update laporan |
-| POST | `/report/delete/{id}` | Hapus laporan |
+| POST | `/report/delete/{id}` | Hapus laporan (block template 66–70) |
 | POST | `/report/duplicate/{id}` | Duplikat laporan + semua item |
+
+### Generate Otomatis ⭐ BARU
+| Method | Endpoint | Deskripsi |
+|---|---|---|
+| GET | `/report/generate` | Form generate laporan otomatis |
+| POST | `/report/generate` | Proses generate (rentang maks 31 hari) |
 
 ### Item Giat
 | Method | Endpoint | Deskripsi |
@@ -314,6 +369,96 @@ Buka `coverage/index.html` di browser untuk lihat persentase coverage.
 
 ---
 
+## Panduan Generate Otomatis
+
+### Cara Pakai
+
+1. Buka menu **Generate** di sidebar (`/report/generate`)
+2. Isi **Tanggal Mulai** dan **Tanggal Akhir** (maks 31 hari)
+3. (Opsional) Isi **Tanggal Merah Manual** — pisahkan dengan koma, format `YYYY-MM-DD`
+   - Contoh: `2026-10-05, 2026-10-12`
+4. Klik **Generate Sekarang**
+5. Cek notifikasi — akan muncul jumlah laporan yang berhasil di-generate dan detail tanggal yang di-skip
+
+### Aturan Skip
+
+| Kondisi | Aksi |
+|---|---|
+| Sabtu / Minggu | Otomatis di-skip |
+| Tanggal merah nasional (1 Jan, 17 Agt, 25 Des) | Otomatis di-skip |
+| Tanggal merah manual (dari form) | Di-skip |
+| Tanggal sudah punya laporan di DB | Di-skip (anti-duplikat) |
+
+### Template Acuan
+
+Generate menggunakan **report template** dengan ID berikut sebagai sumber item giat:
+
+| Hari | Template ID |
+|---|---|
+| Senin | **66** |
+| Selasa | **67** |
+| Rabu | **68** |
+| Kamis | **69** |
+| Jumat | **70** |
+
+⚠️ **Template 66–70 tidak boleh dihapus.** Kalau ingin mengubah pola kegiatan harian, edit item giat langsung di report 66–70.
+
+### Setup Template di Production
+
+Kalau database production belum punya template 66–70, jalankan seeder berikut:
+
+```bash
+mysql -u root -p daily_report_tik_polresta_tuban_db < database/seed_template_66_70.sql
+```
+
+**Isi `database/seed_template_66_70.sql`:** (contoh — sesuaikan option ID dengan yang ada di prod)
+
+```sql
+-- Seed template report 66-70
+INSERT IGNORE INTO reports (id, report_date, created_by, created_at, updated_at)
+VALUES
+    (66, '2000-01-01', NULL, NOW(), NOW()),
+    (67, '2000-01-02', NULL, NOW(), NOW()),
+    (68, '2000-01-03', NULL, NOW(), NOW()),
+    (69, '2000-01-04', NULL, NOW(), NOW()),
+    (70, '2000-01-05', NULL, NOW(), NOW());
+
+-- Insert item template (WAJIB sesuaikan option_id dengan yang ada di DB)
+INSERT IGNORE INTO report_items (
+    report_id, item_no,
+    target_option_id, activity_option_id,
+    personnel_strength_option_id, location_option_id,
+    person_in_charge_option_id, expected_result_option_id,
+    remarks, created_at, updated_at
+) VALUES
+    (66, 1, 40, 50, 66, 79, 97, 160, 'Template Senin', NOW(), NOW()),
+    (66, 2, 45, 148, 68, 81, 97, 149, 'Template Senin', NOW(), NOW()),
+    (67, 1, 41, 51, 66, 79, 97, 119, 'Template Selasa', NOW(), NOW()),
+    -- dst...
+    (70, 1, 174, 175, 66, 79, 97, 160, 'Template Jumat', NOW(), NOW());
+```
+
+> **Cara paling aman:** export dari database dev yang sudah punya template lengkap, lalu import ke prod.
+>
+> ```bash
+> # Dari DB dev
+> mysqldump -u root daily_report_tik_polresta_tuban_db_dev \
+>   reports report_items report_options > template_66_70_dump.sql
+>
+> # Import ke prod
+> mysql -u root daily_report_tik_polresta_tuban_db < template_66_70_dump.sql
+> ```
+>
+> Atau lebih spesifik (hanya template 66–70):
+>
+> ```bash
+> mysqldump -u root daily_report_tik_polresta_tuban_db_dev \
+>   reports report_items \
+>   --where="reports.id IN (66,67,68,69,70)" > template_only.sql
+> ```
+
+---
+
 ## Changelog
 
 Semua perubahan penting pada project ini didokumentasikan di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/) dan [Semantic Versioning](https://semver.org/).
@@ -325,6 +470,49 @@ Semua perubahan penting pada project ini didokumentasikan di sini. Format mengik
 - Test coverage untuk controller
 - Notifikasi email
 - Export CSV
+- Progress bar untuk generate rentang besar (AJAX)
+
+### [1.1.0] — 2026-10-05
+
+**Added:**
+
+- **Generate Laporan Otomatis** — generate laporan untuk rentang tanggal
+  - Form input rentang tanggal (maks 31 hari)
+  - Hanya Senin–Jumat yang di-generate, Sabtu/Minggu auto-skip
+  - Tanggal merah nasional fixed (1 Jan, 17 Agt, 25 Des) auto-skip
+  - Tanggal merah manual (cuti bersama, libur lokal) via form textarea
+  - Anti-duplikat — tanggal yang sudah ada otomatis di-skip
+  - Item giat disalin dari template report 66–70 berdasarkan hari
+  - Atomic transaction — kalau gagal, semua di-rollback
+  - Notifikasi informatif dengan detail skip per alasan
+
+- **Proteksi Template Report** — report 66–70 diproteksi dari penghapusan
+  - Validasi di `ReportService::delete()` — throw exception kalau report ID 66–70
+  - UI: tombol Hapus diganti badge "Template" untuk report 66–70
+  - Badge "TEMPLATE ACUAN" di header card daftar laporan
+  - Kotak peringatan di halaman generate
+
+- **HolidayProvider** — konfigurasi tanggal merah fixed nasional
+  - `src/Config/HolidayProvider.php`
+  - Method `isHoliday()` & `getHolidays()`
+
+- **Database::transaction()** — wrapper transaksi PDO
+  - Auto-rollback kalau ada exception
+  - Dipakai `ReportGeneratorService`
+
+- **Unit Test Baru** — 22 test untuk `ReportGeneratorService` + 3 test proteksi template
+  - Total **175 test, 437 assertions**
+
+**Changed:**
+
+- Update README — tambah section Generate Otomatis & Panduan Template
+- Update daftar endpoint — tambah `/report/generate` (GET & POST)
+- Update jumlah test di section Testing
+
+**Security:**
+
+- Validasi template ada sebelum generate (kalau tidak, throw exception)
+- Report template 66–70 diproteksi dari hapus — jaga integritas acuan
 
 ### [1.0.0] — 2026-10-04
 
@@ -430,13 +618,14 @@ Semua perubahan penting pada project ini didokumentasikan di sini. Format mengik
 | Versi | Kapan | Contoh |
 |---|---|---|
 | **MAJOR** (`v2.0.0`) | Breaking change | Hapus API, ubah schema DB |
-| **MINOR** (`v1.1.0`) | Fitur baru backward-compatible | Tambah fitur export CSV |
+| **MINOR** (`v1.1.0`) | Fitur baru backward-compatible | Tambah fitur generate otomatis |
 | **PATCH** (`v1.0.1`) | Bug fix | Fix typo, fix validation |
 
 ### Checklist Sebelum Release
 
 - [ ] Semua test hijau (`vendor/bin/phpunit tests`)
 - [ ] Manual test fitur utama di browser
+- [ ] **Cek template 66–70 ada di DB production**
 - [ ] Update **Changelog** di README ini
 - [ ] Update versi di `composer.json`
 - [ ] Backup database (`mysqldump`)
@@ -451,28 +640,26 @@ Semua perubahan penting pada project ini didokumentasikan di sini. Format mengik
 ```bash
 git status
 git add .
-git commit -m "Release v1.0.0 — fitur duplikat, itemNo manual, quick-add"
+git commit -m "Release v1.1.0 — fitur generate laporan otomatis"
 ```
 
 **2. Buat tag beranotasi**
 ```bash
-git tag -a v1.0.0 -m "Release v1.0.0
+git tag -a v1.1.0 -m "Release v1.1.0
 
 Fitur baru:
-- Duplikat laporan + item giat
-- Nomor giat manual
-- Quick-add opsi
-- Validasi hapus opsi
-- Dark mode lengkap
-- Layout sidebar
+- Generate laporan otomatis (rentang tanggal, maks 31 hari)
+- Template report 66-70 sebagai acuan
+- Proteksi hapus template
+- HolidayProvider untuk tanggal merah nasional
 
-Test: 139 tests, 330 assertions"
+Test: 175 tests, 437 assertions"
 ```
 
 **3. Push commit & tag**
 ```bash
 git push origin master
-git push origin v1.0.0
+git push origin v1.1.0
 
 # Atau push semua tag sekaligus
 git push --tags
@@ -483,15 +670,15 @@ git push --tags
 Lewat web interface:
 1. Buka repository di GitHub
 2. Klik **Releases** → **Draft a new release**
-3. **Choose a tag** → pilih `v1.0.0`
-4. **Release title**: `v1.0.0 — Fitur Duplikat & Manual Item Number`
-5. **Describe** — copy bagian `[1.0.0]` dari Changelog di atas
-6. Upload artifact (opsional): schema DB, user guide
+3. **Choose a tag** → pilih `v1.1.0`
+4. **Release title**: `v1.1.0 — Generate Laporan Otomatis`
+5. **Describe** — copy bagian `[1.1.0]` dari Changelog di atas
+6. Upload artifact (opsional): `seed_template_66_70.sql`, user guide
 7. Klik **Publish release**
 
 Lewat CLI:
 ```bash
-gh release create v1.0.0 --title "v1.0.0" --notes "Release v1.0.0"
+gh release create v1.1.0 --title "v1.1.0" --notes "Release v1.1.0 — Generate Laporan Otomatis"
 ```
 
 ### Cek Tag
@@ -501,14 +688,14 @@ gh release create v1.0.0 --title "v1.0.0" --notes "Release v1.0.0"
 git tag -l
 
 # Lihat detail tag
-git show v1.0.0
+git show v1.1.0
 
 # Checkout ke tag tertentu
-git checkout v1.0.0
+git checkout v1.1.0
 
 # Hapus tag (kalau salah)
-git tag -d v1.0.0
-git push origin --delete v1.0.0
+git tag -d v1.1.0
+git push origin --delete v1.1.0
 ```
 
 ### Alur Standar Industri

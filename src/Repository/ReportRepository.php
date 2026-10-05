@@ -258,6 +258,82 @@ class ReportRepository
         $this->pdo->exec("DELETE FROM reports");
     }
 
+    /**
+     * Cek tanggal laporan yang sudah ada di rentang tertentu.
+     *
+     * @return array<string>  Array tanggal format 'Y-m-d'.
+     */
+    public function findExistingDatesInRange(
+        DateTimeImmutable $start,
+        DateTimeImmutable $end
+    ): array {
+        $stmt = $this->pdo->prepare("
+        SELECT report_date
+        FROM reports
+        WHERE report_date BETWEEN ? AND ?
+    ");
+
+        $stmt->execute([
+            $start->format('Y-m-d'),
+            $end->format('Y-m-d'),
+        ]);
+
+        $results = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+        // Normalisasi ke string 'Y-m-d'
+        return array_map(
+            fn($date) => (new DateTimeImmutable($date))->format('Y-m-d'),
+            $results
+        );
+    }
+
+    /**
+     * Cek apakah report dengan tanggal tertentu sudah ada.
+     */
+    public function existsByDate(DateTimeImmutable $date): bool
+    {
+        $stmt = $this->pdo->prepare("
+        SELECT COUNT(*)
+        FROM reports
+        WHERE report_date = ?
+    ");
+
+        $stmt->execute([$date->format('Y-m-d')]);
+
+        return (int) $stmt->fetchColumn() > 0;
+    }
+
+    /**
+     * Bulk insert reports.
+     *
+     * @param array<Report> $reports
+     * @return int  Jumlah baris yang di-insert.
+     */
+    public function insertMany(array $reports): int
+    {
+        if (empty($reports)) {
+            return 0;
+        }
+
+        // Bangun query: INSERT INTO reports (...) VALUES (?, ?, ?), (?, ?, ?), ...
+        $placeholders = [];
+        $values = [];
+
+        foreach ($reports as $report) {
+            $placeholders[] = '(?, ?)';
+            $values[] = $report->reportDate->format('Y-m-d');
+            $values[] = $report->createdBy;
+        }
+
+        $sql = "INSERT INTO reports (report_date, created_by) VALUES "
+            . implode(', ', $placeholders);
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($values);
+
+        return $stmt->rowCount();
+    }
+
     private function mapRowToReport(array $result): Report
     {
         $report = new Report();

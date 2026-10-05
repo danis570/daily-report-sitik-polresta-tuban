@@ -407,18 +407,42 @@
                                             </span>
                                         </a>
 
-                                        <form action="/report/delete/<?= $item['report']->id ?>" method="POST"
-                                            class="delete-form flex-1 sm:flex-none inline">
-                                            <button type="button" class="delete-btn w-full text-center px-3 py-1.5 bg-red-500 text-white
-                                                border-2 border-black font-black uppercase text-xs
-                                                shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]
-                                                hover:translate-x-[1px] hover:translate-y-[1px]
-                                                hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] transition-all"
-                                                data-date="<?= htmlspecialchars($item['formattedDate']) ?>"
-                                                data-id="<?= (int) $item['report']->id ?>">
-                                                Hapus
-                                            </button>
-                                        </form>
+                                        <?php
+                                        // Daftar template acuan (sinkron dengan ReportService::PROTECTED_TEMPLATE_IDS)
+                                        $protectedTemplateIds = [66, 67, 68, 69, 70];
+                                        $isProtected = in_array((int) $item['report']->id, $protectedTemplateIds, true);
+                                        ?>
+
+                                        <?php if ($isProtected): ?>
+
+                                            <!-- Template acuan: tidak boleh dihapus -->
+                                            <span class="flex-1 sm:flex-none text-center px-3 py-1.5
+                                                        bg-yellow-400 text-[#121212]
+                                                        border-2 border-black
+                                                        font-black uppercase text-xs
+                                                        shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]
+                                                        cursor-not-allowed"
+                                                title="Laporan ini adalah template acuan, tidak boleh dihapus.">
+                                                Template
+                                            </span>
+
+                                        <?php else: ?>
+
+                                            <!-- Report biasa: tombol Hapus normal -->
+                                            <form action="/report/delete/<?= $item['report']->id ?>" method="POST"
+                                                class="delete-form flex-1 sm:flex-none inline">
+                                                <button type="button" class="delete-btn w-full text-center px-3 py-1.5 bg-red-500 text-white
+                                                    border-2 border-black font-black uppercase text-xs
+                                                    shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]
+                                                    hover:translate-x-[1px] hover:translate-y-[1px]
+                                                    hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] transition-all"
+                                                    data-date="<?= htmlspecialchars($item['formattedDate']) ?>"
+                                                    data-id="<?= (int) $item['report']->id ?>">
+                                                    Hapus
+                                                </button>
+                                            </form>
+
+                                        <?php endif; ?>
 
                                     </div>
 

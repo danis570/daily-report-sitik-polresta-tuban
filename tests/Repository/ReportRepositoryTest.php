@@ -433,4 +433,176 @@ class ReportRepositoryTest extends TestCase
         // Kedua tanggal boundary harus include (BETWEEN inclusive)
         self::assertCount(2, $result);
     }
+
+    // ============================================================
+// TEST: findExistingDatesInRange()
+// ============================================================
+
+    public function testFindExistingDatesInRangeEmpty(): void
+    {
+        $result = $this->reportRepository->findExistingDatesInRange(
+            new DateTimeImmutable('2026-10-01'),
+            new DateTimeImmutable('2026-10-31')
+        );
+
+        self::assertIsArray($result);
+        self::assertCount(0, $result);
+    }
+
+    public function testFindExistingDatesInRangeSingleDate(): void
+    {
+        $report = new Report();
+        $report->reportDate = new DateTimeImmutable('2026-10-05');
+        $report->createdBy = null;
+        $this->reportRepository->save($report);
+
+        $result = $this->reportRepository->findExistingDatesInRange(
+            new DateTimeImmutable('2026-10-01'),
+            new DateTimeImmutable('2026-10-10')
+        );
+
+        self::assertCount(1, $result);
+        self::assertSame('2026-10-05', $result[0]);
+    }
+
+    public function testFindExistingDatesInRangeMultipleDates(): void
+    {
+        foreach (['2026-10-01', '2026-10-05', '2026-10-10', '2026-10-15'] as $date) {
+            $report = new Report();
+            $report->reportDate = new DateTimeImmutable($date);
+            $report->createdBy = null;
+            $this->reportRepository->save($report);
+        }
+
+        $result = $this->reportRepository->findExistingDatesInRange(
+            new DateTimeImmutable('2026-10-01'),
+            new DateTimeImmutable('2026-10-10')
+        );
+
+        // Cuma 3 yang masuk range
+        self::assertCount(3, $result);
+        self::assertContains('2026-10-01', $result);
+        self::assertContains('2026-10-05', $result);
+        self::assertContains('2026-10-10', $result);
+        self::assertNotContains('2026-10-15', $result);
+    }
+
+    public function testFindExistingDatesInRangeInclusiveBoundary(): void
+    {
+        foreach (['2026-10-01', '2026-10-10'] as $date) {
+            $report = new Report();
+            $report->reportDate = new DateTimeImmutable($date);
+            $report->createdBy = null;
+            $this->reportRepository->save($report);
+        }
+
+        // Rentang tepat di boundary — harus include kedua ujung
+        $result = $this->reportRepository->findExistingDatesInRange(
+            new DateTimeImmutable('2026-10-01'),
+            new DateTimeImmutable('2026-10-10')
+        );
+
+        self::assertCount(2, $result);
+        self::assertContains('2026-10-01', $result);
+        self::assertContains('2026-10-10', $result);
+    }
+
+    public function testFindExistingDatesInRangeExcludesOutside(): void
+    {
+        foreach (['2026-09-30', '2026-10-05', '2026-11-01'] as $date) {
+            $report = new Report();
+            $report->reportDate = new DateTimeImmutable($date);
+            $report->createdBy = null;
+            $this->reportRepository->save($report);
+        }
+
+        $result = $this->reportRepository->findExistingDatesInRange(
+            new DateTimeImmutable('2026-10-01'),
+            new DateTimeImmutable('2026-10-31')
+        );
+
+        // Cuma 1 yang masuk range
+        self::assertCount(1, $result);
+        self::assertSame('2026-10-05', $result[0]);
+    }
+
+    // ============================================================
+// TEST: existsByDate()
+// ============================================================
+
+    public function testExistsByDateWhenEmpty(): void
+    {
+        $result = $this->reportRepository->existsByDate(
+            new DateTimeImmutable('2026-10-05')
+        );
+
+        self::assertFalse($result);
+    }
+
+    public function testExistsByDateWhenExists(): void
+    {
+        $report = new Report();
+        $report->reportDate = new DateTimeImmutable('2026-10-05');
+        $report->createdBy = null;
+        $this->reportRepository->save($report);
+
+        $result = $this->reportRepository->existsByDate(
+            new DateTimeImmutable('2026-10-05')
+        );
+
+        self::assertTrue($result);
+    }
+
+    public function testExistsByDateDifferentDate(): void
+    {
+        $report = new Report();
+        $report->reportDate = new DateTimeImmutable('2026-10-05');
+        $report->createdBy = null;
+        $this->reportRepository->save($report);
+
+        // Tanggal beda → false
+        $result = $this->reportRepository->existsByDate(
+            new DateTimeImmutable('2026-10-06')
+        );
+
+        self::assertFalse($result);
+    }
+
+    // ============================================================
+// TEST: insertMany()
+// ============================================================
+
+    public function testInsertManyWhenEmpty(): void
+    {
+        $result = $this->reportRepository->insertMany([]);
+        self::assertSame(0, $result);
+    }
+
+    public function testInsertManySingle(): void
+    {
+        $report = new Report();
+        $report->reportDate = new DateTimeImmutable('2026-10-05');
+        $report->createdBy = null;
+
+        $result = $this->reportRepository->insertMany([$report]);
+
+        self::assertSame(1, $result);
+        self::assertSame(1, $this->reportRepository->countAll());
+    }
+
+    public function testInsertManyMultiple(): void
+    {
+        $reports = [];
+        foreach (['2026-10-01', '2026-10-02', '2026-10-03'] as $date) {
+            $report = new Report();
+            $report->reportDate = new DateTimeImmutable($date);
+            $report->createdBy = null;
+            $reports[] = $report;
+        }
+
+        $result = $this->reportRepository->insertMany($reports);
+
+        self::assertSame(3, $result);
+        self::assertSame(3, $this->reportRepository->countAll());
+    }
 }

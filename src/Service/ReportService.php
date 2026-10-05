@@ -14,6 +14,11 @@ use Unirow2026\DailyReportSitikPolrestaTuban\Repository\ReportRepository;
 
 class ReportService
 {
+    /**
+     * Report ID yang dipakai sebagai template generate otomatis.
+     * TIDAK BOLEH dihapus.
+     */
+    private const PROTECTED_TEMPLATE_IDS = [66, 67, 68, 69, 70];
     private ReportRepository $reportRepository;
     private ReportItemRepository $reportItemRepository;
 
@@ -93,12 +98,21 @@ class ReportService
 
     public function delete(int $id): void
     {
-        // Pastikan laporan induk terdaftar di sistem sebelum dieksekusi hapus
+        // 1. Pastikan laporan induk terdaftar
         $existingReport = $this->reportRepository->findById($id);
         if ($existingReport === null) {
             throw new Exception("Data laporan harian tidak ditemukan atau sudah dihapus.");
         }
 
+        // 2. Proteksi: cek apakah report ini template acuan
+        if (in_array($id, self::PROTECTED_TEMPLATE_IDS, true)) {
+            throw new Exception(
+                "Laporan ini adalah template acuan untuk generate otomatis "
+                . "dan tidak boleh dihapus. Silakan edit isinya jika ingin mengubah pola kegiatan."
+            );
+        }
+
+        // 3. Baru hapus
         $this->reportRepository->deleteById($id);
     }
 

@@ -45,7 +45,57 @@ class ReportServiceTest extends TestCase
         $this->reportOptionRepository->deleteAll();     // ← TAMBAH
         $this->reportRepository->deleteAll();
         $this->userRepository->deleteAll();
+
+         $this->seedTemplates();
     }
+
+    /**
+ * Seed template report 66-70 + 1 item tiap template.
+ * Dipakai supaya test proteksi hapus bisa jalan.
+ */
+private function seedTemplates(): void
+{
+    $pdo = Database::getConnection();
+
+    // 1. Buat 1 option — dipakai untuk semua FK di report_items
+    $stmt = $pdo->prepare("
+        INSERT INTO report_options (category, name, description, created_at, updated_at)
+        VALUES ('activity', ?, NULL, NOW(), NOW())
+    ");
+    $stmt->execute(['Seed Option ' . uniqid()]);
+    $optionId = (int) $pdo->lastInsertId();
+
+    // 2. Tanggal dummy unik per template (biar tidak kena uq_reports_date)
+    $dummyDates = [
+        66 => '2000-01-01',
+        67 => '2000-01-02',
+        68 => '2000-01-03',
+        69 => '2000-01-04',
+        70 => '2000-01-05',
+    ];
+
+    foreach ($dummyDates as $id => $date) {
+
+        // Insert report dengan ID eksplisit
+        $stmt = $pdo->prepare("
+            INSERT INTO reports (id, report_date, created_by, created_at, updated_at)
+            VALUES (?, ?, NULL, NOW(), NOW())
+        ");
+        $stmt->execute([$id, $date]);
+
+        // Insert 1 item
+        $stmt = $pdo->prepare("
+            INSERT INTO report_items (
+                report_id, item_no,
+                target_option_id, activity_option_id,
+                personnel_strength_option_id, location_option_id,
+                person_in_charge_option_id, expected_result_option_id,
+                remarks, created_at, updated_at
+            ) VALUES (?, 1, ?, ?, ?, ?, ?, ?, 'Template', NOW(), NOW())
+        ");
+        $stmt->execute([$id, $optionId, $optionId, $optionId, $optionId, $optionId, $optionId]);
+    }
+}
 
     private function createFullItem(int $reportId, int $itemNo): void
     {
@@ -356,5 +406,59 @@ class ReportServiceTest extends TestCase
         $this->expectExceptionMessage('sudah dipakai');
 
         $this->reportService->duplicate($sourceId, '2026-10-15');
+    }
+
+    // ============================================================
+// TEST: delete() — proteksi template
+// ============================================================
+
+    public function testDeleteFailsWhenReportIsProtectedTemplate(): void
+    {
+        // Template 66 tidak boleh dihapus
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage('template acuan');
+
+        $this->reportService->delete(66);
+    }
+
+    public function testDeleteFailsForAllProtectedTemplates(): void
+    {
+        foreach ([66, 67, 68, 69, 70] as $templateId) {
+            try {
+                $this->reportService->delete($templateId);
+                self::fail("Report #{$templateId} seharusnya throw Exception.");
+            } catch (Exception $e) {
+                self::assertStringContainsString(
+                    'template acuan',
+                    $e->getMessage(),
+                    "Pesan error untuk #{$templateId} salah."
+                );
+            }
+        }
+    }
+
+    public function testDeleteSucceedsForNonProtectedReport(): void
+    {
+        // Buat report biasa
+        $userRequest = new UserRegisterRequest();
+        $userRequest->email = 'delete-non-template@gmail.com';
+        $userRequest->password = 'password123';
+        $userResult = $this->userService->register($userRequest);
+
+        $createRequest = new UserAddReportRequest();
+        $createRequest->reportDate = '2026-10-20';
+        $createRequest->createdBy = $userResult->user->id;
+        $createResponse = $this->reportService->create($createRequest);
+
+        $reportId = $createResponse->report->id;
+
+        // Pastikan bukan di daftar template
+        self::assertNotContains($reportId, [66, 67, 68, 69, 70]);
+
+        // Hapus → harus sukses
+        $this->reportService->delete($reportId);
+
+        $check = $this->reportRepository->findById($reportId);
+        self::assertNull($check);
     }
 }

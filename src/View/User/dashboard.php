@@ -335,12 +335,16 @@
                 <div class="p-6">
 
                     <div class="w-14 h-14
-                                bg-black text-[#00d982]
-                                border-2 border-black
-                                flex items-center justify-center
-                                text-2xl font-black">
+            shrink-0 overflow-hidden rounded-full
+            border-2 border-black dark:border-white">
 
-                        👤
+                        <?php if (!empty($currentProfile->avatar)): ?>
+                            <img src="/uploads/avatar/<?= htmlspecialchars($currentProfile->avatar) ?>" alt="Avatar"
+                                class="w-full h-full object-cover">
+                        <?php else: ?>
+                            <img src="/uploads/avatar/default-avatar.png" alt="Default Avatar"
+                                class="w-full h-full object-cover">
+                        <?php endif; ?>
 
                     </div>
 
