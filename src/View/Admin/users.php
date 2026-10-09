@@ -44,7 +44,7 @@
         $totalRegularUsers = 0;
 
         foreach ($users as $user) {
-            if (($user['role'] ?? '') === 'admin') {
+            if (($user->role ?? '') === 'admin') {
                 $totalAdmins++;
             } else {
                 $totalRegularUsers++;
@@ -172,7 +172,7 @@
                         <?php else: ?>
 
                             <?php foreach ($users as $i => $u): ?>
-                                <?php $isAdmin = ($u['role'] ?? '') === 'admin'; ?>
+                                <?php $isAdmin = ($u->role ?? '') === 'admin'; ?>
 
                                 <tr class="border-t-4 border-black dark:border-white
                                            hover:bg-primary/10 transition-colors">
@@ -194,7 +194,7 @@
                                             </div>
 
                                             <span class="font-bold text-black dark:text-white">
-                                                <?= htmlspecialchars($u['email']) ?>
+                                                <?= htmlspecialchars($u->email) ?>
                                             </span>
                                         </div>
                                     </td>
@@ -208,7 +208,7 @@
                                                 ? 'bg-black text-primary dark:bg-primary dark:text-black'
                                                 : 'bg-white text-black dark:bg-[#222] dark:text-white' ?>">
                                             <i data-lucide="<?= $isAdmin ? 'shield-check' : 'user' ?>" class="w-4 h-4"></i>
-                                            <?= htmlspecialchars($u['role']) ?>
+                                            <?= htmlspecialchars($u->role->value) ?>
                                         </span>
                                     </td>
 
@@ -233,8 +233,8 @@
                                                        hover:shadow-none
                                                        hover:translate-x-[4px] hover:translate-y-[4px]
                                                        transition-all cursor-pointer"
-                                                data-id="<?= htmlspecialchars($u['id']) ?>"
-                                                data-email="<?= htmlspecialchars($u['email'], ENT_QUOTES) ?>">
+                                                data-id="<?= htmlspecialchars($u->id) ?>"
+                                                data-email="<?= htmlspecialchars($u->email, ENT_QUOTES) ?>">
                                                 <i data-lucide="trash-2" class="w-5 h-5"></i>
                                                 Hapus
                                             </button>

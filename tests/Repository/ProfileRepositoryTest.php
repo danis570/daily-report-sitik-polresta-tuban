@@ -172,4 +172,55 @@ class ProfileRepositoryTest extends TestCase
         $this->profileRepository->deleteAll();
         $this->assertCount(0, $this->profileRepository->findAll());
     }
+
+        public function testFindByQrCode(): void
+    {
+        $profile = new Profile();
+        $profile->userId = $this->dummyUser->id;
+        $profile->name = 'Test';
+        $profile->qrCode = 'TIK-0001';
+        $this->profileRepository->save($profile);
+
+        $found = $this->profileRepository->findByQrCode('TIK-0001');
+
+        self::assertNotNull($found);
+        self::assertSame('TIK-0001', $found->qrCode);
+    }
+
+    public function testFindByQrCodeNotFound(): void
+    {
+        $result = $this->profileRepository->findByQrCode('TIK-9999');
+        self::assertNull($result);
+    }
+
+    public function testExistsByQrCode(): void
+    {
+        $profile = new Profile();
+        $profile->userId = $this->dummyUser->id;
+        $profile->name = 'Test';
+        $profile->qrCode = 'TIK-0001';
+        $this->profileRepository->save($profile);
+
+        self::assertTrue($this->profileRepository->existsByQrCode('TIK-0001'));
+        self::assertFalse($this->profileRepository->existsByQrCode('TIK-9999'));
+    }
+
+    public function testSaveProfileWithNewFields(): void
+    {
+        $profile = new Profile();
+        $profile->userId = $this->dummyUser->id;
+        $profile->name = 'INDRA D.S.';
+        $profile->nrp = '82031270';
+        $profile->rank = 'AIPDA';
+        $profile->position = 'PS. KASI TIK';
+        $profile->qrCode = 'TIK-0001';
+
+        $saved = $this->profileRepository->save($profile);
+
+        self::assertNotNull($saved->id);
+        self::assertSame('82031270', $saved->nrp);
+        self::assertSame('AIPDA', $saved->rank);
+        self::assertSame('PS. KASI TIK', $saved->position);
+        self::assertSame('TIK-0001', $saved->qrCode);
+    }
 }

@@ -111,4 +111,32 @@ class ProfileServiceTest extends TestCase
 
         $this->profileService->update($request);
     }
+
+    public function testUpdateAutoGeneratesQrCode(): void
+{
+    $request = new ProfileUpdateRequest();
+    $request->userId = $this->dummyUser->id;
+    $request->name = 'Test User';
+
+    $response = $this->profileService->update($request);
+
+    self::assertNotNull($response->profile->qrCode);
+    self::assertStringStartsWith('TIK-', $response->profile->qrCode);
+}
+
+public function testUpdateSavesNrpRankPosition(): void
+{
+    $request = new ProfileUpdateRequest();
+    $request->userId = $this->dummyUser->id;
+    $request->name = 'Test';
+    $request->nrp = '82031270';
+    $request->rank = 'AIPDA';
+    $request->position = 'PS. KASI TIK';
+
+    $response = $this->profileService->update($request);
+
+    self::assertSame('82031270', $response->profile->nrp);
+    self::assertSame('AIPDA', $response->profile->rank);
+    self::assertSame('PS. KASI TIK', $response->profile->position);
+}
 }

@@ -37,7 +37,7 @@ class UserRepository
         if ($id === null) {
             return null;
         }
-        
+
         $stmt = $this->pdo->prepare("SELECT * FROM users WHERE id = ?");
         $stmt->execute([$id]);
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -88,9 +88,36 @@ class UserRepository
 
     public function findAll(): array
     {
-        $stmt = $this->pdo->query("SELECT * FROM users");
-        $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        return $result ?: [];
+        $stmt = $this->pdo->query("SELECT * FROM users WHERE deleted_at IS NULL ORDER BY id");
+        $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        if (!$results) {
+            return [];
+        }
+
+        $users = [];
+        foreach ($results as $row) {
+            $users[] = $this->mapRowToUser($row);
+        }
+
+        return $users;
+    }
+
+    /**
+     * Helper: mapping row → User object.
+     */
+    private function mapRowToUser(array $row): User
+    {
+        $user = new User();
+        $user->id = (int) $row['id'];
+        $user->email = $row['email'];
+        $user->password = $row['password'];
+        $user->role = UserRole::from($row['role']);
+        $user->createdAt = new DateTimeImmutable($row['created_at']);
+        $user->updatedAt = $row['updated_at'] ? new DateTimeImmutable($row['updated_at']) : null;
+        $user->deletedAt = $row['deleted_at'] ? new DateTimeImmutable($row['deleted_at']) : null;
+
+        return $user;
     }
 
     public function deleteById(int $id)

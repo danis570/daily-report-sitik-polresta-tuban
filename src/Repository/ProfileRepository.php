@@ -16,11 +16,18 @@ class ProfileRepository
 
     public function save(Profile $profile): Profile
     {
-        $stmt = $this->pdo->prepare("INSERT INTO profiles (name, avatar, user_id) VALUES (?, ?, ?)");
+        $stmt = $this->pdo->prepare("
+            INSERT INTO profiles (name, avatar, user_id, nrp, `rank`, position, qr_code)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        ");
         $stmt->execute([
             $profile->name,
             $profile->avatar,
-            $profile->userId
+            $profile->userId,
+            $profile->nrp,
+            $profile->rank,
+            $profile->position,
+            $profile->qrCode,
         ]);
 
         $profile->id = (int) $this->pdo->lastInsertId();
@@ -41,12 +48,43 @@ class ProfileRepository
         if ($userId === null) {
             return null;
         }
-        
+
         $stmt = $this->pdo->prepare("SELECT * FROM profiles WHERE user_id = ?");
         $stmt->execute([$userId]);
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
 
         return $result ? $this->mapRowToProfile($result) : null;
+    }
+
+    /**
+     * Cari profile berdasarkan qr_code — untuk fitur absensi scan.
+     */
+    public function findByQrCode(string $qrCode): ?Profile
+    {
+        $stmt = $this->pdo->prepare("SELECT * FROM profiles WHERE qr_code = ?");
+        $stmt->execute([$qrCode]);
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $result ? $this->mapRowToProfile($result) : null;
+    }
+
+    /**
+     * Cek apakah qr_code sudah dipakai (kecuali oleh profile tertentu).
+     */
+    public function existsByQrCode(string $qrCode, ?int $exceptProfileId = null): bool
+    {
+        if ($exceptProfileId !== null) {
+            $stmt = $this->pdo->prepare("
+                SELECT COUNT(*) FROM profiles
+                WHERE qr_code = ? AND id != ?
+            ");
+            $stmt->execute([$qrCode, $exceptProfileId]);
+        } else {
+            $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM profiles WHERE qr_code = ?");
+            $stmt->execute([$qrCode]);
+        }
+
+        return (int) $stmt->fetchColumn() > 0;
     }
 
     public function findAll(): array
@@ -70,7 +108,8 @@ class ProfileRepository
     {
         $stmt = $this->pdo->prepare("
             UPDATE profiles
-            SET name = ?, avatar = ?, user_id = ?
+            SET name = ?, avatar = ?, user_id = ?,
+                nrp = ?, `rank` = ?, position = ?, qr_code = ?
             WHERE id = ?
         ");
 
@@ -78,7 +117,11 @@ class ProfileRepository
             $profile->name,
             $profile->avatar,
             $profile->userId,
-            $profile->id
+            $profile->nrp,
+            $profile->rank,
+            $profile->position,
+            $profile->qrCode,
+            $profile->id,
         ]);
     }
 
@@ -110,6 +153,12 @@ class ProfileRepository
         $profile->name = $result['name'];
         $profile->avatar = $result['avatar'];
         $profile->userId = (int) $result['user_id'];
+
+        // Field baru — pakai null-coalescing untuk backward-compat
+        $profile->nrp = $result['nrp'] ?? null;
+        $profile->rank = $result['rank'] ?? null;
+        $profile->position = $result['position'] ?? null;
+        $profile->qrCode = $result['qr_code'] ?? null;
 
         return $profile;
     }

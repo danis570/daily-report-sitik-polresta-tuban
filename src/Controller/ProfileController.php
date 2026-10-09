@@ -62,6 +62,9 @@ class ProfileController extends BaseController
             $request->userId = (int) $currentUser->userId;
             $request->name = $_POST['name'] ?? null;
             $request->avatar = null;
+            $request->nrp = $_POST['nrp'] ?? null;
+            $request->rank = $_POST['rank'] ?? null;
+            $request->position = $_POST['position'] ?? null;
 
             // --- LOGIKA UPLOAD FILE FISIK ---
             if (isset($_FILES['avatar']) && $_FILES['avatar']['error'] === UPLOAD_ERR_OK) {

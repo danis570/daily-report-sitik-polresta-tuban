@@ -288,6 +288,82 @@
 
                         </div>
 
+                        <!-- NRP -->
+                        <div>
+                            <label for="nrp" class="block mb-2 text-sm font-black uppercase">
+                                NRP
+                            </label>
+                            <div class="relative">
+                                <i data-lucide="hash"
+                                    class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-black pointer-events-none z-10"></i>
+                                <input class="w-full pl-12 pr-4 py-3
+                       bg-gray-50 border-2 border-black
+                       font-bold text-black outline-none
+                       focus:bg-white
+                       focus:shadow-[4px_4px_0px_0px_#00d982]
+                       transition-shadow" type="text" name="nrp" id="nrp"
+                                    value="<?= htmlspecialchars($profile->nrp ?? '') ?>" placeholder="Contoh: 82031270">
+                            </div>
+                        </div>
+
+                        <!-- Pangkat -->
+                        <div>
+                            <label for="rank" class="block mb-2 text-sm font-black uppercase">
+                                Pangkat
+                            </label>
+                            <div class="relative">
+                                <i data-lucide="award"
+                                    class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-black pointer-events-none z-10"></i>
+                                <input class="w-full pl-12 pr-4 py-3
+                       bg-gray-50 border-2 border-black
+                       font-bold text-black outline-none
+                       focus:bg-white
+                       focus:shadow-[4px_4px_0px_0px_#00d982]
+                       transition-shadow" type="text" name="rank" id="rank"
+                                    value="<?= htmlspecialchars($profile->rank ?? '') ?>" placeholder="Contoh: AIPDA">
+                            </div>
+                        </div>
+
+                        <!-- Jabatan -->
+                        <div class="md:col-span-2">
+                            <label for="position" class="block mb-2 text-sm font-black uppercase">
+                                Jabatan
+                            </label>
+                            <div class="relative">
+                                <i data-lucide="briefcase"
+                                    class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-black pointer-events-none z-10"></i>
+                                <input class="w-full pl-12 pr-4 py-3
+                       bg-gray-50 border-2 border-black
+                       font-bold text-black outline-none
+                       focus:bg-white
+                       focus:shadow-[4px_4px_0px_0px_#00d982]
+                       transition-shadow" type="text" name="position" id="position"
+                                    value="<?= htmlspecialchars($profile->position ?? '') ?>"
+                                    placeholder="Contoh: PS. KASI TIK">
+                            </div>
+                        </div>
+
+                        <!-- QR Code (read-only display) -->
+                        <?php if (!empty($profile->qrCode)): ?>
+                            <div class="md:col-span-2">
+                                <label class="block mb-2 text-sm font-black uppercase">
+                                    QR Code Anggota
+                                </label>
+                                <div class="flex items-center gap-3 p-3 bg-gray-50 border-2 border-black">
+                                    <i data-lucide="qr-code" class="w-5 h-5 text-black"></i>
+                                    <span class="font-mono font-black text-lg">
+                                        <?= htmlspecialchars($profile->qrCode) ?>
+                                    </span>
+                                    <span class="ml-auto text-xs text-gray-500 font-bold">
+                                        Untuk absensi
+                                    </span>
+                                </div>
+                                <p class="mt-2 text-xs text-gray-500 font-bold">
+                                    QR Code ini dipakai untuk absensi. Simpan atau cetak kartu QR Anda.
+                                </p>
+                            </div>
+                        <?php endif; ?>
+
 
                         <!-- Email Readonly -->
                         <?php if (isset($user['email'])): ?>

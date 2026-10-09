@@ -44,7 +44,7 @@
         $totalRegularUsers = 0;
 
         foreach ($users as $user) {
-            if (($user['role'] ?? '') === 'admin') {
+            if (($user->role ?? '') === 'admin') {
                 $totalAdmins++;
             } else {
                 $totalRegularUsers++;

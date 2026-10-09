@@ -96,7 +96,7 @@
                        hover:shadow-none
                        hover:translate-x-[6px] hover:translate-y-[6px]
                        transition-all duration-150">
-                Tentang Kami
+                Tentang Sistem
             </a>
 
         </div>

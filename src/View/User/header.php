@@ -124,64 +124,111 @@
         </div>
 
         <!-- Menu -->
-        <nav class="flex-1 overflow-y-auto p-4 space-y-3">
+        <!-- Menu -->
+        <nav class="flex-1 overflow-y-auto p-4 space-y-5">
 
-            <p class="px-2 text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400">
-                Menu Utama
-            </p>
+            <!-- ============================================== -->
+            <!-- SECTION 1: ABSENSI -->
+            <!-- ============================================== -->
+            <div>
+                <p class="px-2 mb-3 text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400">
+                    Absensi
+                </p>
 
-            <!-- Laporan -->
-            <a href="/reports"
-                class="flex items-center gap-3 px-4 py-3 font-black uppercase text-sm border-4 transition-all
-                    <?= $current === 'report'
-                        ? 'bg-primary text-black border-black shadow-[4px_4px_0_0_#121212]'
-                        : 'border-transparent hover:bg-primary hover:text-black hover:border-black dark:text-white dark:hover:border-white' ?>">
-                <i data-lucide="file-text" class="w-5 h-5 shrink-0"></i>
-                <span>Laporan</span>
-            </a>
-
-            <!-- Tambah -->
-            <a href="/report/add"
-                class="flex items-center gap-3 px-4 py-3 font-black uppercase text-sm border-4 transition-all
-                    <?= $current === 'add'
-                        ? 'bg-primary text-black border-black shadow-[4px_4px_0_0_#121212]'
-                        : 'border-transparent hover:bg-primary hover:text-black hover:border-black dark:text-white dark:hover:border-white' ?>">
-                <i data-lucide="plus-square" class="w-5 h-5 shrink-0"></i>
-                <span>Tambah</span>
-            </a>
-
-            <!-- Lacak -->
-            <a href="/report/tracking"
-                class="flex items-center gap-3 px-4 py-3 font-black uppercase text-sm border-4 transition-all
-                    <?= $current === 'tracking'
-                        ? 'bg-primary text-black border-black shadow-[4px_4px_0_0_#121212]'
-                        : 'border-transparent hover:bg-primary hover:text-black hover:border-black dark:text-white dark:hover:border-white' ?>">
-                <i data-lucide="search" class="w-5 h-5 shrink-0"></i>
-                <span>Lacak</span>
-            </a>
-
-            <!-- Opsi -->
-            <a href="/report/options"
-                class="flex items-center gap-3 px-4 py-3 font-black uppercase text-sm border-4 transition-all
-                    <?= $current === 'options'
-                        ? 'bg-primary text-black border-black shadow-[4px_4px_0_0_#121212]'
-                        : 'border-transparent hover:bg-primary hover:text-black hover:border-black dark:text-white dark:hover:border-white' ?>">
-                <i data-lucide="settings" class="w-5 h-5 shrink-0"></i>
-                <span>Opsi</span>
-            </a>
-
-            <!-- Generate -->
-            <a href="/report/generate"
-                class="flex items-center gap-3 px-4 py-3 font-black uppercase text-sm border-4 transition-all
-                <?= $current === 'generate'
+                <!-- Absen -->
+                <a href="/absen"
+                    class="flex items-center gap-3 px-4 py-3 font-black uppercase text-sm border-4 transition-all
+        <?= in_array($current ?? '', ['absen'], true)
             ? 'bg-primary text-black border-black shadow-[4px_4px_0_0_#121212]'
             : 'border-transparent hover:bg-primary hover:text-black hover:border-black dark:text-white dark:hover:border-white' ?>">
-                <i data-lucide="sparkles" class="w-5 h-5 shrink-0"></i>
-                <span>Generate</span>
-            </a>
+                    <i data-lucide="scan-line" class="w-5 h-5 shrink-0"></i>
+                    <span>Absen</span>
+                </a>
 
-            <!-- Akun -->
-            <div class="pt-4 mt-4 border-t-2 border-dashed border-gray-300 dark:border-gray-700">
+                <!-- Rekap Harian -->
+                <a href="/absen/rekap"
+                    class="flex items-center gap-3 px-4 py-3 font-black uppercase text-sm border-4 transition-all
+        <?= in_array($current ?? '', ['absen-rekap'], true)
+            ? 'bg-primary text-black border-black shadow-[4px_4px_0_0_#121212]'
+            : 'border-transparent hover:bg-primary hover:text-black hover:border-black dark:text-white dark:hover:border-white' ?>">
+                    <i data-lucide="clipboard-list" class="w-5 h-5 shrink-0"></i>
+                    <span>Rekap Harian</span>
+                </a>
+
+                <!-- Rekap Bulanan -->
+                <a href="/absen/rekap/bulanan"
+                    class="flex items-center gap-3 px-4 py-3 font-black uppercase text-sm border-4 transition-all
+        <?= in_array($current ?? '', ['absen-bulanan'], true)
+            ? 'bg-primary text-black border-black shadow-[4px_4px_0_0_#121212]'
+            : 'border-transparent hover:bg-primary hover:text-black hover:border-black dark:text-white dark:hover:border-white' ?>">
+                    <i data-lucide="calendar-days" class="w-5 h-5 shrink-0"></i>
+                    <span>Rekap Bulanan</span>
+                </a>
+            </div>
+
+            <!-- ============================================== -->
+            <!-- SECTION 2: LAPORAN -->
+            <!-- ============================================== -->
+            <div class="pt-4 border-t-2 border-dashed border-gray-300 dark:border-gray-700">
+                <p class="px-2 mb-3 text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400">
+                    Laporan
+                </p>
+
+                <!-- Laporan -->
+                <a href="/reports"
+                    class="flex items-center gap-3 px-4 py-3 font-black uppercase text-sm border-4 transition-all
+                <?= $current === 'report'
+                    ? 'bg-primary text-black border-black shadow-[4px_4px_0_0_#121212]'
+                    : 'border-transparent hover:bg-primary hover:text-black hover:border-black dark:text-white dark:hover:border-white' ?>">
+                    <i data-lucide="file-text" class="w-5 h-5 shrink-0"></i>
+                    <span>Laporan</span>
+                </a>
+
+                <!-- Tambah -->
+                <a href="/report/add"
+                    class="flex items-center gap-3 px-4 py-3 font-black uppercase text-sm border-4 transition-all
+                <?= $current === 'add'
+                    ? 'bg-primary text-black border-black shadow-[4px_4px_0_0_#121212]'
+                    : 'border-transparent hover:bg-primary hover:text-black hover:border-black dark:text-white dark:hover:border-white' ?>">
+                    <i data-lucide="plus-square" class="w-5 h-5 shrink-0"></i>
+                    <span>Tambah</span>
+                </a>
+
+                <!-- Lacak -->
+                <a href="/report/tracking"
+                    class="flex items-center gap-3 px-4 py-3 font-black uppercase text-sm border-4 transition-all
+                <?= $current === 'tracking'
+                    ? 'bg-primary text-black border-black shadow-[4px_4px_0_0_#121212]'
+                    : 'border-transparent hover:bg-primary hover:text-black hover:border-black dark:text-white dark:hover:border-white' ?>">
+                    <i data-lucide="search" class="w-5 h-5 shrink-0"></i>
+                    <span>Lacak</span>
+                </a>
+
+                <!-- Opsi -->
+                <a href="/report/options"
+                    class="flex items-center gap-3 px-4 py-3 font-black uppercase text-sm border-4 transition-all
+                <?= $current === 'options'
+                    ? 'bg-primary text-black border-black shadow-[4px_4px_0_0_#121212]'
+                    : 'border-transparent hover:bg-primary hover:text-black hover:border-black dark:text-white dark:hover:border-white' ?>">
+                    <i data-lucide="settings" class="w-5 h-5 shrink-0"></i>
+                    <span>Opsi</span>
+                </a>
+
+                <!-- Generate -->
+                <a href="/report/generate"
+                    class="flex items-center gap-3 px-4 py-3 font-black uppercase text-sm border-4 transition-all
+            <?= $current === 'generate'
+                ? 'bg-primary text-black border-black shadow-[4px_4px_0_0_#121212]'
+                : 'border-transparent hover:bg-primary hover:text-black hover:border-black dark:text-white dark:hover:border-white' ?>">
+                    <i data-lucide="sparkles" class="w-5 h-5 shrink-0"></i>
+                    <span>Generate</span>
+                </a>
+            </div>
+
+            <!-- ============================================== -->
+            <!-- SECTION 3: AKUN -->
+            <!-- ============================================== -->
+            <div class="pt-4 border-t-2 border-dashed border-gray-300 dark:border-gray-700">
                 <p class="px-2 mb-3 text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400">
                     Akun
                 </p>
@@ -189,9 +236,9 @@
                 <!-- Profile -->
                 <a href="/profile"
                     class="flex items-center gap-3 px-4 py-3 font-black uppercase text-sm border-4 transition-all
-                        <?= $current === 'profile'
-                            ? 'bg-primary text-black border-black shadow-[4px_4px_0_0_#121212]'
-                            : 'border-transparent hover:bg-primary hover:text-black hover:border-black dark:text-white dark:hover:border-white' ?>">
+                <?= $current === 'profile'
+                    ? 'bg-primary text-black border-black shadow-[4px_4px_0_0_#121212]'
+                    : 'border-transparent hover:bg-primary hover:text-black hover:border-black dark:text-white dark:hover:border-white' ?>">
                     <i data-lucide="user" class="w-5 h-5 shrink-0"></i>
                     <span>Profile</span>
                 </a>
